@@ -1,0 +1,4406 @@
+#include <amxmodx>
+#include <fakemeta>
+#include <nvault>
+#include <reapi>
+
+new const PLUGIN[] = "JBMenu";
+new const VERSION[] = "Premium";
+new const AUTHOR[] = "By.KinG";
+
+native set_lights(const Lighting[]);
+
+#define AUTHORITY_1 ADMIN_IMMUNITY
+#define AUTHORITY_2 ADMIN_KICK
+#define AUTHORITY_3 ADMIN_RESERVATION
+
+#define TASK_QUAKE 2020
+#define TASK_TL_MONSTER 2021
+
+new const TAG[] = "Bogazıcı GaminG";
+new const KISA_TAG[] = "BJ";
+new const TS3_IP[] = "Bogazıcı";
+
+new const VIEW_MODEL_T[] = "models/JBMenu/v_Yumruk_Hunter.mdl";
+new const WEAPON_MODEL_T[] = "models/JBMenu/p_Yumruk.mdl";
+
+new const VIEW_MODEL_T_1[] = "models/[Shop]JailBreak/Palo/Palo.mdl";
+new const WEAPON_MODEL_T_1[] = "models/[Shop]JailBreak/Palo/Palo2.mdl";
+
+new const VIEW_MODEL_T_2[] = "models/JBMenu/v_Altin_Asa.mdl";
+new const WEAPON_MODEL_T_2[] = "models/JBMenu/p_Yumruk.mdl";
+
+new const VIEW_MODEL_T_3[] = "models/JBMenu/v_Isin_Kilici.mdl";
+new const WEAPON_MODEL_T_3[] = "models/JBMenu/p_Yumruk.mdl";
+
+new const VIEW_MODEL_T_4[] = "models/[Shop]JailBreak/Moto/Moto.mdl";
+new const WEAPON_MODEL_T_4[] = "models/[Shop]JailBreak/Moto/Moto2.mdl";
+
+new const VIEW_MODEL_CT[] = "models/JBMenu/v_Jop.mdl";
+new const WEAPON_MODEL_CT[] = "models/JBMenu/p_Jop.mdl";
+
+new const T_WEAPON_Sounds_1[][] =
+{
+	"[Shop]JailBreak/T/THit1.wav",
+	"[Shop]JailBreak/T/THit2.wav",
+	"[Shop]JailBreak/T/THit3.wav",
+	"[Shop]JailBreak/T/THit4.wav",
+	"[Shop]JailBreak/T/TStab.wav",
+	"[Shop]JailBreak/T/Slash1.wav",
+	"[Shop]JailBreak/T/TConvoca.wav",
+	"[Shop]JailBreak/T/THitWall.wav"
+};
+
+new const T_WEAPON_Sounds_2[][] =
+{
+	"[Shop]JailBreak/Moto/MTHit1.wav",
+	"[Shop]JailBreak/Moto/MTHit2.wav",
+	"[Shop]JailBreak/Moto/TStab.wav",
+	"[Shop]JailBreak/Moto/MTSlash1.wav",
+	"[Shop]JailBreak/Moto/MTConvoca.wav",
+	"[Shop]JailBreak/Moto/MTHitWall.wav"
+};
+
+new const CT_WEAPON_Sounds[][] =
+{
+	"[Shop]JailBreak/CT/CTHit1.wav",
+	"[Shop]JailBreak/CT/CTHit2.wav",
+	"[Shop]JailBreak/CT/CTHit3.wav",
+	"[Shop]JailBreak/CT/CTHit4.wav",
+	"[Shop]JailBreak/CT/CTStab.wav",
+	"[Shop]JailBreak/CT/Slash1.wav",
+	"[Shop]JailBreak/CT/CTConvoca.wav",
+	"[Shop]JailBreak/CT/CTHitWall.wav"
+};
+
+new const Case_Sounds[][] =
+{
+	"JBMenu/Case_Open_1.wav",
+	"JBMenu/Case_Open_2.wav"
+};
+
+new const Yes[] = "[Shop]JailBreak/Yes.wav";
+new const FlashBanG_Sound[] = "weapons/flashbang-2.wav";
+
+new const ClCmd_JBMenu[][] =
+{
+	"say /jbmenu",
+	"say !jbmenu",
+	"say .jbmenu",
+	"say /jailbreakmenu",
+	"say !jailbreakmenu",
+	"say .jailbreakmenu",
+	"say_team /jbmenu",
+	"say_team !jbmenu",
+	"say_team .jbmenu",
+	"say_team /jailbreakmenu",
+	"say_team !jailbreakmenu",
+	"say_team .jailbreakmenu",
+	"nightvision"
+};
+
+new const ClCmd_MGMenu[][] =
+{
+	"say /mg",
+	"say !mg",
+	"say .mg",
+	"say /tlver",
+	"say !tlver",
+	"say .tlver",
+	"say_team /mg",
+	"say_team !mg",
+	"say_team .mg",
+	"say_team /tlver",
+	"say_team !tlver",
+	"say_team .tlver",
+	"chooseteam"
+};
+
+static const Max_Clip_Ammo[] = {0, 13, 0, 10, 0, 7, 0, 30, 30, 0, 15, 20, 25, 30, 35, 25, 12, 20, 10, 30, 100, 8, 30, 30, 20, 0, 7, 30, 30, 0, 50};
+
+new Cvars[26], Knife_ID[33], Prime_Number_ID[33], Case_Color[33], TL_Transfer_ID[33];
+new Float: TL_ID[33];
+
+new Control[4];
+
+/*
+	Control[X];
+	
+	X = 0 --> Elbasi
+	X = 1 --> Deprem
+	X = 2 --> Elektrik
+	X = 3 --> Ayaklanma
+*/
+
+new CSGO_Case_Key[33][2], Job_ID[33][2], MG_Num[33][2], Quest_ID[33][4];
+
+/*
+	CSGO_Case_Key[ID][X];
+	
+	X = 0 --> Kasa
+	X = 1 --> Anahtar
+*/
+
+/*
+	Job_ID[ID][X];
+	
+	X = 0 --> Aktif Meslek
+	X = 1 --> Sonraki Round Atkif Olacak Meslek
+*/
+
+new bool: Control_ID[33][20];
+
+/*
+	Control_ID[ID][X];
+	
+	X = 0 --> Emanet Menu
+	X = 1 --> Reklam
+	X = 2 --> Ts3 Reklami
+	X = 3 --> Kendini Kaldir
+	X = 4 --> GodMode
+	X = 5 --> Unammo
+	X = 6 --> Kasa Acilis Kontrolu
+	X = 7 --> Kasa Kontrol 1
+	X = 8 --> Kasa Kontrol 2
+	X = 9 --> Bonus
+	X = 10 --> Ayaklanma
+	X = 18 --> T Gizleme
+*/
+
+public plugin_init()
+{
+	register_plugin(PLUGIN, VERSION, AUTHOR);
+	
+	for(new i; i < sizeof(ClCmd_JBMenu); i++)
+	{
+		register_clcmd(ClCmd_JBMenu[i], "JBMenu");
+	}
+	
+	for(new i; i < sizeof(ClCmd_JBMenu); i++)
+	{
+		register_clcmd(ClCmd_MGMenu[i], "MGMenu");
+	}
+	
+	register_clcmd("say /fps", "FPS_Settings_Menu");
+	register_clcmd("say .fps", "FPS_Settings_Menu");
+	
+	register_clcmd("TL_MIKTARI", "TL_Select");
+	
+	register_concmd("amx_ayaklanmabaslat", "Riot_Control", AUTHORITY_1, "Ayaklanma [ - 1 : Baslat - Kapat : 0 - ]");
+	
+	register_event("CurWeapon", "Event_CurWeapon", "be", "1=1");
+	register_event("HLTV", "Event_Round_Start", "a", "1=0", "2=0");
+	
+	register_forward(FM_EmitSound, "EmitSound");
+	register_forward(FM_AddToFullPack, "AddToFullPack", 1);
+	
+	RegisterHookChain(RG_RoundEnd, "RoundEnd", 1);
+	RegisterHookChain(RG_CBasePlayer_Spawn, "CBasePlayer_Spawn", 1);
+	RegisterHookChain(RG_CBasePlayer_Killed, "CBasePlayer_Killed", 1);
+	RegisterHookChain(RG_CBasePlayer_TakeDamage, "CBasePlayer_TakeDamage", 0);
+	
+	Cvars[0] = register_cvar("JBMenu_Knife_1_TL", "-1.00");
+	Cvars[1] = register_cvar("JBMenu_Knife_2_TL", "-10.00");
+	Cvars[2] = register_cvar("JBMenu_Knife_3_TL", "-15.00");
+	Cvars[3] = register_cvar("JBMenu_Knife_4_TL", "50.00");
+	Cvars[4] = register_cvar("JBMenu_Prize_1_TL", "0.50");
+	Cvars[5] = register_cvar("JBMenu_Prize_2_TL", "2.50");
+	Cvars[6] = register_cvar("JBMenu_Prize_3_TL", "1.00");
+	Cvars[7] = register_cvar("JBMenu_Rebellion_1_TL", "60.00");
+	Cvars[8] = register_cvar("JBMenu_Rebellion_2_TL", "90.00");
+	Cvars[9] = register_cvar("JBMenu_Rebellion_3_TL", "100.00");
+	Cvars[10] = register_cvar("JBMenu_Rebellion_4_TL", "80.00");
+	Cvars[11] = register_cvar("JBMenu_Rebellion_5_TL", "80.00");
+	Cvars[12] = register_cvar("JBMenu_Ammo_1_TL", "90.00");
+	Cvars[13] = register_cvar("JBMenu_Ammo_2_TL", "100.00");
+	Cvars[14] = register_cvar("JBMenu_Ammo_3_TL", "95.00");
+	Cvars[15] = register_cvar("JBMenu_Ammo_4_TL", "100.00");
+	Cvars[16] = register_cvar("JBMenu_Ammo_5_TL", "150.00");
+	Cvars[17] = register_cvar("JBMenu_Offensive_1_TL", "50.00");
+	Cvars[18] = register_cvar("JBMenu_Offensive_2_TL", "100.00");
+	Cvars[19] = register_cvar("JBMenu_Offensive_3_TL", "60.00");
+	Cvars[20] = register_cvar("JBMenu_Offensive_4_TL", "80.00");
+	Cvars[21] = register_cvar("JBMenu_Offensive_5_TL", "100.00");
+	Cvars[22] = register_cvar("JBMenu_Prime_Number_TL", "10.00");
+	Cvars[23] = register_cvar("JBMenu_Chance_Case_TL", "20.00");
+	Cvars[24] = register_cvar("JBMenu_CSGO_Case_TL", "1.00");
+	Cvars[25] = register_cvar("JBMenu_CSGO_Key_TL", "21.00");
+}
+
+public plugin_precache()
+{
+	precache_model(VIEW_MODEL_T);
+	precache_model(WEAPON_MODEL_T);
+	
+	precache_model(VIEW_MODEL_T_1);
+	precache_model(WEAPON_MODEL_T_1);
+	
+	precache_model(VIEW_MODEL_T_2);
+	precache_model(WEAPON_MODEL_T_2);
+	
+	precache_model(VIEW_MODEL_T_3);
+	precache_model(WEAPON_MODEL_T_3);
+	
+	precache_model(VIEW_MODEL_T_4);
+	precache_model(WEAPON_MODEL_T_4);
+	
+	precache_model(VIEW_MODEL_CT);
+	precache_model(WEAPON_MODEL_CT);
+	
+	for(new i; i < sizeof(T_WEAPON_Sounds_1); i++)
+	{
+		precache_sound(CT_WEAPON_Sounds[i]);
+		precache_sound(T_WEAPON_Sounds_1[i]);
+	}
+	
+	for(new i; i < sizeof(T_WEAPON_Sounds_2); i++)
+	{
+		precache_sound(T_WEAPON_Sounds_2[i]);
+	}
+	
+	for(new i; i < sizeof(Case_Sounds); i++)
+	{
+		precache_sound(Case_Sounds[i]);
+	}
+	
+	precache_sound(Yes);
+	precache_sound(FlashBanG_Sound);
+}
+
+public plugin_natives()
+{
+	register_native("JB_Set_User_TL", "Native_JB_Set_User_TL");
+	register_native("JB_Get_User_TL", "Native_JB_Get_User_TL", 1);
+}
+
+public Native_JB_Set_User_TL(ID, Float: Amount)
+{
+	TL_ID[ID] = Amount;
+	return 1;
+}
+
+public Native_JB_Get_User_TL(ID)
+{
+	return float: TL_ID[ID];
+}
+
+public client_putinserver(ID)
+{
+	TL_ID[ID] = 10.00;
+	
+	Job_ID[ID][0] = 0;
+	Job_ID[ID][1] = 0;
+	
+	Quest_ID[ID][0] = 0;
+	Quest_ID[ID][1] = 0;
+	Quest_ID[ID][2] = 0;
+	Quest_ID[ID][3] = 0;
+	
+	CSGO_Case_Key[ID][0] = 0;
+	CSGO_Case_Key[ID][1] = 0;
+	
+	Control_ID[ID][2] = false;
+	Control_ID[ID][11] = false;
+	Control_ID[ID][12] = false;
+	Control_ID[ID][13] = false;
+	Control_ID[ID][14] = false;
+	Control_ID[ID][15] = false;
+	Control_ID[ID][16] = false;
+	Control_ID[ID][17] = false;
+	Control_ID[ID][18] = false;
+}
+
+public client_disconnected(ID)
+{
+	if(task_exists(ID + TASK_TL_MONSTER))
+	{
+		remove_task(ID + TASK_TL_MONSTER);
+	}
+}
+
+public JBMenu(ID)
+{
+	new Players[32], Num_Alive_T;
+	get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+	
+	if(!is_user_alive(ID))
+	{
+		client_print_color(ID, ID, "^3[%s] ^4JBMenuye ^3Oluyken ^4Giris Yapamazsin", TAG);
+	}
+	else if(get_member(ID, m_iTeam) != TEAM_TERRORIST)
+	{
+		client_print_color(ID, ID, "^3[%s] ^4JBMenuye Sadece ^3Mahkumlar ^4Giris Yapabilir", TAG);
+	}
+	else if(Num_Alive_T <= 1)
+	{
+		client_print_color(ID, ID, "^3[%s] ^4JBMenuye Yasayan Mahkum Sayisi^3 1 Kisi ^4Iken Giris Yapamazsin", TAG);
+	}
+	else
+	{
+		static Item[128];
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rPremium \yJBMenu", TAG);
+		new Menu = menu_create(Item, "JBMenu_Handler");
+		
+		if(Control_ID[ID][0])
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEmanetler \d[\rKULLANDIN\d]", KISA_TAG);
+		}
+		else
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEmanetler", KISA_TAG);
+		}
+		menu_additem(Menu, Item, "1");
+		
+		if(CT_GodMode_Control())
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAlisveris \d[\rGODMODE AKTIF\d]", KISA_TAG);
+		}
+		else
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAlisveris", KISA_TAG);
+		}
+		menu_additem(Menu, Item, "2");
+		
+		if(Control_ID[ID][9])
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBonus Menu \d[\rKULLANDIN\d]", KISA_TAG);
+		}
+		else
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBonus Menu", KISA_TAG);
+		}
+		menu_additem(Menu, Item, "3");
+		
+		if(get_user_flags(ID) & AUTHORITY_3)
+		{
+			if(Control_ID[ID][10])
+			{
+				formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Baslat \d[\rKULLANDIN\d]", KISA_TAG);
+			}
+			else if(!Control[3])
+			{
+				formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Baslat \d[\rKAPALI\d]", KISA_TAG);
+			}
+			else
+			{
+				formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Baslat \d[\rACIK\d]", KISA_TAG);
+			}
+		}
+		else
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Baslat \d[\rYETKIN YOK\d]", KISA_TAG);
+		}
+		menu_additem(Menu, Item, "4");
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMeslek Menu", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGorev Menu", KISA_TAG);
+		menu_additem(Menu, Item, "6");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yOyuncu Ayar Menu^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]^n", KISA_TAG, TL_ID[ID]);
+		menu_additem(Menu, Item, "9");
+		
+		menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+		menu_setprop(Menu, MPROP_BACKNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+		menu_setprop(Menu, MPROP_NEXTNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+		menu_setprop(Menu, MPROP_EXITNAME, Item);
+		menu_display(ID, Menu, 0);
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public JBMenu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Control_ID[ID][0])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Emanet Menuye Her Round^3 1 Kere ^4Girebilirsin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				Deposit_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			Shopping_Menu(ID);
+		}
+		case 3 :
+		{
+			if(Control_ID[ID][9])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuye Her Round^3 1 Kere ^4Girebilirsin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				Bonus_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				if(Control_ID[ID][10])
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Ayaklanma Menuye Her Round^3 1 Kere ^4Girebilirsin", TAG);
+					JBMenu(ID);
+				}
+				else if(!Control[3])
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Aktif Bir Ayaklanma ^3Yok", TAG);
+					JBMenu(ID);
+				}
+				else
+				{
+					Riot_Menu(ID);
+				}
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetkiniz Yeterli ^3Degil", TAG);
+				JBMenu(ID);
+			}
+		}
+		case 5 :
+		{
+			Job_Menu(ID);
+		}
+		case 6 :
+		{
+			Quest_Menu(ID);
+		}
+		case 9 :
+		{
+			Player_Settings_Info_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Deposit_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEmanet Menu", TAG);
+	new Menu = menu_create(Item, "Deposit_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yPompa \d[\r+%0.2f TL\d]", KISA_TAG, get_pcvar_float(Cvars[0]) - (get_pcvar_float(Cvars[0]) * 2));
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAltin Asa \d[\r+%0.2f TL\d]", KISA_TAG, get_pcvar_float(Cvars[1]) - (get_pcvar_float(Cvars[1]) * 2));
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsin Kilici \d[\r+%0.2f TL\d]", KISA_TAG, get_pcvar_float(Cvars[2]) - (get_pcvar_float(Cvars[2]) * 2));
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTestere + Bomba \d[\r+%0.2f TL\d]^n", KISA_TAG, get_pcvar_float(Cvars[3]));
+	menu_additem(Menu, Item, "4");
+	
+	if(Control_ID[ID][1])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yReklam At \d[\rKULLANDIN\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yReklam At \d[\r+%0.2f TL\d]", KISA_TAG, get_pcvar_float(Cvars[4]));
+	}
+	menu_additem(Menu, Item, "5");
+	
+	if(get_member(ID, m_iAccount) >= 16000)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y16.000$ Bozdur \d[\r+%0.2f TL\d]", KISA_TAG, get_pcvar_float(Cvars[5]));
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y16.000$ Bozdur \d[\rYETERSIZ $\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "6");
+	
+	if(Control_ID[ID][2])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTs3 Reklami At \d[\rKULLANDIN\d]^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", KISA_TAG, TL_ID[ID]);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTs3 Reklami At \d[\r+%0.2f TL\d]^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", KISA_TAG, get_pcvar_float(Cvars[6]), TL_ID[ID]);
+	}
+	menu_additem(Menu, Item, "7");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Deposit_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			TL_ID[ID] -= get_pcvar_float(Cvars[0]);
+			Knife_ID[ID] = 1;
+			Control_ID[ID][0] = true;
+			rg_remove_all_items(ID);
+			rg_give_item(ID, "weapon_knife");
+			rh_emit_sound2(ID, 0, CHAN_AUTO, Yes, VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+			client_print_color(ID, ID, "^3[%s] ^4Emanet Menuden ^3Tuvalet Pompasi ^4Satin Aldin", TAG);
+			JBMenu(ID);
+		}
+		case 2 :
+		{
+			TL_ID[ID] -= get_pcvar_float(Cvars[1]);
+			Knife_ID[ID] = 2;
+			Control_ID[ID][0] = true;
+			rg_remove_all_items(ID);
+			rg_give_item(ID, "weapon_knife");
+			rh_emit_sound2(ID, 0, CHAN_AUTO, Yes, VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+			client_print_color(ID, ID, "^3[%s] ^4Emanet Menuden ^3Altin Asa ^4Satin Aldin", TAG);
+			JBMenu(ID);
+		}
+		case 3 :
+		{
+			TL_ID[ID] -= get_pcvar_float(Cvars[2]);
+			Knife_ID[ID] = 3;
+			Control_ID[ID][0] = true;
+			rg_remove_all_items(ID);
+			rg_give_item(ID, "weapon_knife");
+			rh_emit_sound2(ID, 0, CHAN_AUTO, Yes, VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+			client_print_color(ID, ID, "^3[%s] ^4Emanet Menuden ^3Isin Kilici ^4Satin Aldin", TAG);
+			JBMenu(ID);
+		}
+		case 4 :
+		{
+			new Float: Price = get_pcvar_float(Cvars[3]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Knife_ID[ID] = 4;
+				Control_ID[ID][0] = true;
+				rg_remove_all_items(ID);
+				rg_give_item(ID, "weapon_knife");
+				rg_give_item(ID, "weapon_hegrenade");
+				rh_emit_sound2(ID, 0, CHAN_AUTO, Yes, VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+				client_print_color(ID, ID, "^3[%s] ^4Emanet Menuden ^3Testere + Bomba ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Deposit_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(Control_ID[ID][1])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Her Round^3 1 Kere ^4Reklam Atabilirsin", TAG);
+			}
+			else
+			{
+				new Float: Price = get_pcvar_float(Cvars[4]);
+				
+				TL_ID[ID] += Price;
+				Control_ID[ID][1] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Reklam Atarak ^3%0.2f TL ^4Kazandin", TAG, Price);
+				client_print_color(0, 0, "^3[%s] ^4Sizde Ailemize Katilmak Isterseniz Saya ^3/ts3 ^4Yazabilirsiniz", TAG);
+			}
+			
+			Deposit_Menu(ID);
+		}
+		case 6 :
+		{
+			new Money = get_member(ID, m_iAccount);
+			
+			if(Money >= 16000)
+			{
+				new Float: Price = get_pcvar_float(Cvars[5]);
+				
+				TL_ID[ID] += Price;
+				set_member(ID, m_iAccount, Money - 16000);
+				client_print_color(ID, ID, "^3[%s]^3 16.000$ ^4Bozdurarak ^3%0.2f TL ^4Kazandin", TAG, Price);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3$^1.^4Gereken ^3$ ^1:^3 16.000$", TAG);
+			}
+			
+			Deposit_Menu(ID);
+		}
+		case 7 :
+		{
+			if(Control_ID[ID][2])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Her Map^3 1 Kere ^4Ts3 Reklami Atabilirsin", TAG);
+			}
+			else
+			{
+				new Float: Price = get_pcvar_float(Cvars[6]);
+				
+				TL_ID[ID] += Price;
+				Control_ID[ID][2] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Ts3 Reklami Atarak ^3%0.2f TL ^4Kazandin", TAG, Price);
+				client_print_color(0, 0, "^3[%s] ^4TeamSpeak3 IP ^1: ^3%s", TAG, TS3_IP);
+			}
+			
+			Deposit_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+
+}
+
+public Shopping_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAlisveris Menu", TAG);
+	new Menu = menu_create(Item, "Shopping_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Menu", KISA_TAG);
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKizilay Menu", KISA_TAG);
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCephane Menu", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTaarruz Menu", KISA_TAG);
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKumar \r& \ySans Menu", KISA_TAG);
+	menu_additem(Menu, Item, "5");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTL Transfer Menu", KISA_TAG);
+	menu_additem(Menu, Item, "6");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Shopping_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(!CT_GodMode_Control())
+			{
+				Rebellion_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			HP_Menu(ID);
+		}
+
+		case 3 :
+		{
+			if(!CT_GodMode_Control())
+			{
+				Ammo_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			if(!CT_GodMode_Control())
+			{
+				Offensive_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(!CT_GodMode_Control())
+			{
+				Gambling_Chance_Menu(ID);
+			}
+		}
+		case 6 :
+		{
+			if(!CT_GodMode_Control())
+			{
+				TL_Transfer_Menu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Rebellion_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIsyan Menu", TAG);
+	new Menu = menu_create(Item, "Rebellion_Menu_Handler");
+	
+	if(Control_ID[ID][3])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKendini Kaldir \d[\rKULLANDIN\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKendini Kaldir \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[8]));
+	}
+	menu_additem(Menu, Item, "1");
+	
+	if(Control_ID[ID][4])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y3 Sn. GodMode \d[\rAKTIF\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y3 Sn. GodMode \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[9]));
+	}
+	menu_additem(Menu, Item, "2");
+	
+	if(Control[1])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y3 Sn. Deprem \d[\rAKTIF\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y3 Sn. Deprem \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[10]));
+	}
+	menu_additem(Menu, Item, "3");
+	
+	if(Control[2])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y5 Sn. Elektrik Kesintisi \d[\rAKTIF\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y5 Sn. Elektrik Kesintisi \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[11]));
+	}
+	menu_additem(Menu, Item, "4");
+	
+	formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Rebellion_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || CT_GodMode_Control())
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Float: Price;
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Control_ID[ID][3])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Her Round^3 1 Kere ^4Kendini Kaldirabilirsin", TAG);
+			}
+			else
+			{
+				Price = get_pcvar_float(Cvars[8]);
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Quest_ID[ID][3]++;
+					Control_ID[ID][3] = true;
+					
+					new Float: Origin[3];
+					get_entvar(ID, var_origin, Origin);
+					Origin[2] += 35.0;
+					set_entvar(ID, var_origin, Origin);
+					
+					client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Kendini Kaldirdi", TAG, Price);
+					client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Kendini Kaldir ^4Satin Aldin", TAG, Price);
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Rebellion_Menu(ID);
+				}
+			}
+		}
+		case 2 :
+		{
+			if(Control_ID[ID][4])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4GodMode Suan ^3Aktif", TAG);
+			}
+			else
+			{
+				Price = get_pcvar_float(Cvars[9]);
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Quest_ID[ID][3]++;
+					Control_ID[ID][4] = true;
+					set_entvar(ID, var_takedamage, DAMAGE_NO);
+					set_task(3.0, "GodMode_Reset", ID);
+					client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile^3 3 Sn. GodMode ^4Satin Aldi", TAG, Price);
+					client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile^3 3 Sn. GodMode ^4Satin Aldin", TAG, Price);
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Rebellion_Menu(ID);
+				}
+			}
+		}
+		case 3 :
+		{
+			if(Control[1])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Deprem Suan ^3Aktif", TAG);
+			}
+			else
+			{
+				Price = get_pcvar_float(Cvars[10]);
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Control[1] = true;
+					Quest_ID[ID][3]++;
+					set_task(1.0, "Quake_Start", TASK_QUAKE, _, _, "b");
+					set_task(4.0, "Quake_Finish");
+					client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile^3 3 Sn. Deprem ^4Baslatti", TAG, Price);
+					client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile^3 3 Sn. Deprem ^4Satin Aldin", TAG, Price);
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Rebellion_Menu(ID);
+				}
+			}
+		}
+		case 4 :
+		{
+			if(Control[2])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Elektrik Suan ^3Aktif", TAG);
+			}
+			else
+			{
+				Price = get_pcvar_float(Cvars[11]);
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Control[2] = true;
+					Quest_ID[ID][3]++;
+					set_lights("a");
+					set_task(1.0, "Electric_LeveL_Sour_1");
+					client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile^3 5 Sn. Elektrik Kesintisi ^4Baslatti", TAG, Price);
+					client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile^3 5 Sn. Elektrik Kesintisi ^4Satin Aldin", TAG, Price);
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Rebellion_Menu(ID);
+				}
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public GodMode_Reset(ID)
+{
+	Control_ID[ID][4] = false;
+	set_entvar(ID, var_takedamage, DAMAGE_AIM);
+	client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden Aldigin^3 3 Sn. GodMode ^4Sona Erdi", TAG);
+}
+
+public Quake_Start()
+{
+	new Players[32], Num_Alive_All, New_ID;
+	get_players(Players, Num_Alive_All, "achi");
+	
+	for(new i; i < Num_Alive_All; i++)
+	{
+		New_ID = Players[i];
+		
+		message_begin(MSG_ONE_UNRELIABLE, get_user_msgid("ScreenShake"), {0, 0, 0}, New_ID);
+		write_short(0xFFFF);
+		write_short(1<<13);
+		write_short(0xFFFF);
+		message_end();
+	}
+}
+
+public Quake_Finish()
+{
+	Control[1] = false;
+	remove_task(TASK_QUAKE);
+	client_print_color(0, 0, "^3[%s] ^4Deprem ^3Sona Erdi", TAG);
+}
+
+public Electric_LeveL_Sour_1()
+{
+	set_lights("b");
+	set_task(1.0, "Electric_LeveL_Sour_2");
+}
+
+public Electric_LeveL_Sour_2()
+{
+	set_lights("c");
+	set_task(1.0, "Electric_LeveL_Sour_3");
+}
+
+public Electric_LeveL_Sour_3()
+{
+	set_lights("d");
+	set_task(1.0, "Electric_LeveL_Sour_4");
+}
+
+public Electric_LeveL_Sour_4()
+{
+	set_lights("e");
+	set_task(1.0, "Electric_LeveL_Sour_5");
+}
+
+public Electric_LeveL_Sour_5()
+{
+	Control[2] = false;
+	set_lights("#OFF");
+	client_print_color(0, 0, "^3[%s] ^4Elektrik Kesintisi ^3Sona Erdi", TAG);
+}
+
+public HP_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yHP Menu", TAG);
+	new Menu = menu_create(Item, "HP_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y100 HP \d[\r15 TL\d]", KISA_TAG);
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y200 HP \d[\r25 TL\d]", KISA_TAG);
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y300 HP \d[\r35 TL\d]", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y400 HP \d[\r45 TL\d]", KISA_TAG);
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y500 HP \d[\r55 TL\d]", KISA_TAG);
+	menu_additem(Menu, Item, "5");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public HP_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Float: Price;
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			Price = get_pcvar_float(Cvars[7]) + 5;
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 100.0);
+				client_print_color(ID, ID, "^3[%s] ^4Kizilay Menuden^3 100 HP ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3Bakiye^1.^4Gereken ^1: ^3%d TL", TAG, Price);
+			}
+		}
+		case 2 :
+		{
+			Price = get_pcvar_float(Cvars[7]) + 15;
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 200.0);
+				client_print_color(ID, ID, "^3[%s] ^4Kizilay Menuden^3 200 HP ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3Bakiye^1.^4Gereken ^1: ^3%d TL", TAG, Price);
+			}
+		}
+		case 3 :
+		{
+			Price = get_pcvar_float(Cvars[7]) + 25;
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 300.0);
+				client_print_color(ID, ID, "^3[%s] ^4Kizilay Menuden^3 300 HP ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3Bakiye^1.^4Gereken ^1: ^3%d TL", TAG, Price);
+			}
+		}
+		case 4 :
+		{
+			Price = get_pcvar_float(Cvars[7]) + 35;
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 400.0);
+				client_print_color(ID, ID, "^3[%s] ^4Kizilay Menuden^3 400 HP ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3Bakiye^1.^4Gereken ^1: ^3%d TL", TAG, Price);
+			}
+		}
+		case 5 :
+		{
+			Price = get_pcvar_float(Cvars[7]) + 45;
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 500.0);
+				client_print_color(ID, ID, "^3[%s] ^4Kizilay Menuden^3 500 HP ^4Satin Aldin", TAG);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz ^3Bakiye^1.^4Gereken ^1: ^3%d TL", TAG, Price);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Ammo_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCephane Menu", TAG);
+	new Menu = menu_create(Item, "Ammo_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEl Bombasi \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[12]));
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBomba Seti \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[13]));
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y1 Mermili AWP \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[14]));
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTek Sarjor Glock18 \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[15]));
+	menu_additem(Menu, Item, "4");
+	
+	if(Control_ID[ID][5])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySinirsiz Mermi \d[\rAKTIF\d]", KISA_TAG);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySinirsiz Mermi \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[16]));
+	}
+	menu_additem(Menu, Item, "5");
+	
+	formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Ammo_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || CT_GodMode_Control())
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Float: Price;
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			Price = get_pcvar_float(Cvars[12]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				rg_give_item(ID, "weapon_hegrenade");
+				client_print_color(ID, ID, "^3[%s] ^4Cephane Menuden ^3%0.2f TL ^4Ile ^3El Bombasi ^4Satin Aldin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Ammo_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			Price = get_pcvar_float(Cvars[13]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				rg_give_item(ID, "weapon_hegrenade");
+				rg_give_item(ID, "weapon_flashbang");
+				rg_give_item(ID, "weapon_smokegrenade");
+				client_print_color(ID, ID, "^3[%s] ^4Cephane Menuden ^3%0.2f TL ^4Ile ^3Bomba Seti ^4Satin Aldin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Ammo_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			Price = get_pcvar_float(Cvars[14]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				set_member(rg_give_item(ID, "weapon_awp"), m_Weapon_iClip, 1);
+				client_print_color(ID, ID, "^3[%s] ^4Cephane Menuden ^3%0.2f TL ^4Ile^3 1 Mermili AWP ^4Satin Aldin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Ammo_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			Price = get_pcvar_float(Cvars[15]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				rg_give_item(ID, "weapon_glock18");
+				client_print_color(ID, ID, "^3[%s] ^4Cephane Menuden ^3%0.2f TL ^4Ile ^3Tek Sarjor Glock18 ^4Satin Aldin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Ammo_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(Control_ID[ID][5])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Sinirsiz Mermi Suan ^3Aktif", TAG);
+			}
+			else
+			{
+				Price = get_pcvar_float(Cvars[16]);
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Quest_ID[ID][3]++;
+					Control_ID[ID][5] = true;
+					client_print_color(ID, ID, "^3[%s] ^4Cephane Menuden ^3%0.2f TL ^4Ile ^3Sinirsiz Mermi ^4Satin Aldin", TAG, Price);
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Ammo_Menu(ID);
+				}
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Offensive_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTaarruz Menu", TAG);
+	new Menu = menu_create(Item, "Offensive_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlara 100 HP Ver \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[17]));
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlara El Bombasi Ver \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[18]));
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyanlari Flashla \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[19]));
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyanlari 2 Sn. Gom \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[20]));
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyanlara 3 Sn. Drug Ver \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[21]));
+	menu_additem(Menu, Item, "5");
+	
+	formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Offensive_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || CT_GodMode_Control())
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Float: Price;
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			Price = get_pcvar_float(Cvars[17]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				
+				new Players[32], Num_Alive_T, New_ID;
+				get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+				
+				for(new i; i < Num_Alive_T; i++)
+				{
+					New_ID = Players[i];
+					set_entvar(New_ID, var_health, Float: get_entvar(New_ID, var_health) + 100.0);
+				}
+				
+				client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Mahkumlara 100 HP ^4Verdi", TAG, Price);
+				client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Mahkumlara 100 HP ^4Verdin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Offensive_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			Price = get_pcvar_float(Cvars[18]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				
+				new Players[32], Num_Alive_T, New_ID;
+				get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+				
+				for(new i; i < Num_Alive_T; i++)
+				{
+					New_ID = Players[i];
+					rg_give_item(New_ID, "weapon_hegrenade");
+				}
+				
+				client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Mahkumlara El Bombasi ^4Verdi", TAG, Price);
+				client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Mahkumlara El Bombasi ^4Verdin", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Offensive_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			Price = get_pcvar_float(Cvars[19]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				
+				new Players[32], Num_Alive_CT, New_ID;
+				get_players(Players, Num_Alive_CT, "acehi", "CT");
+				
+				for(new i; i < Num_Alive_CT; i++)
+				{
+					New_ID = Players[i];
+					
+					message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, New_ID);
+					write_short(1<<15);
+					write_short(1<<10);
+					write_short(1<<12);
+					write_byte(255);
+					write_byte(255);
+					write_byte(255);
+					write_byte(255);
+					message_end();
+					
+					rh_emit_sound2(New_ID, 0, CHAN_AUTO, FlashBanG_Sound, VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+				}
+				
+				client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Gardiyanlari Flashladi", TAG, Price);
+				client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Gardiyanlari Flashladi", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Offensive_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			Price = get_pcvar_float(Cvars[20]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				
+				new Players[32], Num_Alive_CT, New_ID, Float: Origin[3];
+				get_players(Players, Num_Alive_CT, "acehi", "CT");
+				
+				for(new i; i < Num_Alive_CT; i++)
+				{
+					New_ID = Players[i];
+					
+					get_entvar(New_ID, var_origin, Origin);
+					Origin[2] -= 35.0;
+					set_entvar(New_ID, var_origin, Origin);
+					
+					set_task(2.0, "Origin_Reset", New_ID);
+				}
+				
+				client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Gardiyanlari 2 Sn. Gomdu", TAG, Price);
+				client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Gardiyanlari 2 Sn. Gomdu", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Offensive_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			Price = get_pcvar_float(Cvars[21]);
+			
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				Quest_ID[ID][3]++;
+				
+				new Players[32], Num_Alive_CT, New_ID;
+				get_players(Players, Num_Alive_CT, "acehi", "CT");
+				
+				for(new i; i < Num_Alive_CT; i++)
+				{
+					New_ID = Players[i];
+					
+					message_begin(MSG_ONE, get_user_msgid("SetFOV"), {0, 0, 0}, New_ID);
+					write_byte(180);
+					message_end();
+					
+					set_task(3.0, "Drug_Reset", New_ID);
+				}
+				
+				client_print_color(0, 0, "^3[%s] ^4Bir Mahkum ^3%0.2f TL ^4Ile ^3Gardiyanlara 3 Sn. Drug Verdi", TAG, Price);
+				client_print_color(ID, ID, "^3[%s] ^4Isyan Menuden ^3%0.2f TL ^4Ile ^3Gardiyanlara 3 Sn. Drug Verdi", TAG, Price);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Offensive_Menu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Origin_Reset(ID)
+{
+	new Float: Origin[3];
+	get_entvar(ID, var_origin, Origin);
+	Origin[2] += 35.0;
+	set_entvar(ID, var_origin, Origin);
+}
+
+public Drug_Reset(ID)
+{
+	message_begin(MSG_ONE, get_user_msgid("SetFOV"), {0, 0, 0}, ID);
+	write_byte(100);
+	message_end();
+}
+
+public Gambling_Chance_Menu(ID)
+{
+	if(Control_ID[ID][6])
+	{
+		client_print_color(ID, ID, "^3[%s] ^4Suan Kasa Aciliyor", TAG);
+		JBMenu(ID);
+	}
+	else
+	{
+		static Item[128];
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKumar \r& \ySans Menu", TAG);
+		new Menu = menu_create(Item, "Gambling_Chance_Menu_Handler");
+		
+		if(Prime_Number_ID[ID] >= 5)
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAsal Sayi \d[\rBU ROUND DAHA FAZLA OYNAYAMAZSIN\d]", KISA_TAG);
+		}
+		else
+		{
+			formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAsal Sayi \d[\r%0.2f\d] \w| \d[\yOdul \w: \r25.00 TL\d]", KISA_TAG, get_pcvar_float(Cvars[22]));
+		}
+		menu_additem(Menu, Item, "1");
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySans Kutusu \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[23]));
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rCS:GO \yKasa \r& \yAnahtar Menu", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		
+		formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+		menu_addtext(Menu, Item);
+		
+		menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+		menu_setprop(Menu, MPROP_BACKNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+		menu_setprop(Menu, MPROP_NEXTNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+		menu_setprop(Menu, MPROP_EXITNAME, Item);
+		menu_display(ID, Menu, 0);
+	}
+		
+	return PLUGIN_HANDLED;
+}
+
+public Gambling_Chance_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || CT_GodMode_Control())
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Prime_Number_ID[ID] >= 5)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Her Round En Fazla^3 5 Kere ^4Sansinizi Deneyebilirsiniz", TAG);
+			}
+			else
+			{
+				new Float: Price = get_pcvar_float(Cvars[22])
+				
+				if(TL_ID[ID] >= Price)
+				{
+					TL_ID[ID] -= Price;
+					Prime_Number_ID[ID]++;
+					
+					new Number, bool: Prime_Control;
+					Number = random_num(10, 100);
+					
+					for(new i = 2; i < Number; i++)
+					{
+						if(Number % i > 0 && Number != i)
+						{
+							Prime_Control = true;
+						}
+						else
+						{
+							Prime_Control = false;
+							break;
+						}
+					}
+					
+					if(Prime_Control)
+					{
+						TL_ID[ID] += 25.00;
+						client_print_color(ID, ID, "^3[%s] ^4Sayi ^1: ^3%d ^4ve ^4Asaldir^1.^4Sansiniza^3 25.00 TL ^4Kazandiniz", TAG, Number);
+					}
+					else
+					{
+						client_print_color(ID, ID, "^3[%s] ^4Sayi ^1: ^3%d ^4ve ^4Asal Degildir^1.^4Sansiniza ^3Kusun :(", TAG, Number);
+					}
+					
+					JBMenu(ID);
+				}
+				else
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+					Gambling_Chance_Menu(ID);
+				}
+			}
+		}
+		case 2 :
+		{
+			new Float: Price = get_pcvar_float(Cvars[23])
+				
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				
+				switch(random_num(1, 5))
+				{
+					case 1 :
+					{
+						set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 100.0);
+						client_print_color(ID, ID, "^3[%s] ^4Sans Kutusundan ^3+100 HP ^4Kazandin", TAG);
+					}
+					case 2 :
+					{
+						set_entvar(ID, var_armorvalue, Float: get_entvar(ID, var_armorvalue) + 100.0);
+						client_print_color(ID, ID, "^3[%s] ^4Sans Kutusundan ^3+100 Armor^4Kazandin", TAG);
+					}
+					case 3 :
+					{
+						TL_ID[ID] += 50.00;
+						client_print_color(ID, ID, "^3[%s] ^4Sans Kutusundan ^3+50 TL ^4Kazandin", TAG);
+					}
+					case 4 :
+					{
+						rg_give_item(ID, "weapon_hegrenade");
+						client_print_color(ID, ID, "^3[%s] ^4Sans Kutusundan ^3El Bombasi ^4Kazandin", TAG);
+					}
+					case 5 :
+					{
+						set_member(rg_give_item(ID, "weapon_ak47"), m_Weapon_iClip, 3);
+						client_print_color(ID, ID, "^3[%s] ^4Sans Kutusundan^3 3 Mermili AK47 ^4Kazandin", TAG);
+					}
+				}
+				
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				Gambling_Chance_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			CSGO_Case_Key_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public CSGO_Case_Key_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rCS:GO \yKasa \r& \yAnahtar Menu", TAG);
+	new Menu = menu_create(Item, "CSGO_Case_Key_Menu_Handler");
+	
+	if(CSGO_Case_Key[ID][0] > 0 && CSGO_Case_Key[ID][1] > 0)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKasa \rAc^n", KISA_TAG);
+	}
+	else if(CSGO_Case_Key[ID][0] < 1 && CSGO_Case_Key[ID][1] > 0)
+	{
+		formatex(Item, charsmax(Item), "\d[ \w- \rKasa Eksik \w- \d]^n");
+	}
+	else if(CSGO_Case_Key[ID][0] > 0 && CSGO_Case_Key[ID][1] < 1)
+	{
+		formatex(Item, charsmax(Item), "\d[ \w- \rAnahtar Eksik \w- \d]^n");
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[ \w- \rKasa \w& \rAnahtar Eksik \w- \d]^n");
+	}
+	menu_additem(Menu, Item, "1");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKasa Al \d[\r%0.2f\d]", KISA_TAG, get_pcvar_float(Cvars[24]));
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAnahtar Al \d[\r%0.2f\d]^n", KISA_TAG, get_pcvar_float(Cvars[25]));
+	menu_additem(Menu, Item, "3");
+	
+	formatex(Item, charsmax(Item), "\d[ \w- \yKasadaki Esyalari Gormek Icin Tiklayin \w- \d]");
+	menu_additem(Menu, Item, "4");
+	
+	formatex(Item, charsmax(Item), "^n\d[ \w- \yMevcut \rKasa \ySayisi \w: \r%d \w- \d]", CSGO_Case_Key[ID][0]);
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \yMevcut \rAnahtar \ySayisi \w: \r%d \w- \d]", CSGO_Case_Key[ID][1]);
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public CSGO_Case_Key_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || CT_GodMode_Control())
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(CSGO_Case_Key[ID][0] > 0 && CSGO_Case_Key[ID][1] > 0)
+			{
+				Quest_ID[ID][0]++;
+				CSGO_Case_Key[ID][0]--;
+				CSGO_Case_Key[ID][1]--;
+				Control_ID[ID][6] = true;
+				Control_ID[ID][7] = true;
+								
+				rh_emit_sound2(ID, 0, CHAN_AUTO, Case_Sounds[0], VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(1<<14);
+				write_short(1<<9);
+				write_short(1<<11);
+				write_byte(255);
+				write_byte(255);
+				write_byte(255);
+				write_byte(255);
+				message_end();
+				
+				set_task(3.8, "Soul", ID);
+				set_task(1.2, "Fade", ID);
+				set_task(6.1, "Case_Open_End", ID);
+				
+				client_print_color(ID, ID, "^3[%s] ^4Kasa Aciliyor", TAG);
+				JBMenu(ID);
+			}
+			else if(CSGO_Case_Key[ID][0] < 1 && CSGO_Case_Key[ID][1] > 0)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Envanterinizde ^3Kasa ^4Yok", TAG);
+				CSGO_Case_Key_Menu(ID);
+				
+			}
+			else if(CSGO_Case_Key[ID][0] > 0 && CSGO_Case_Key[ID][1] < 1)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Envanterinizde ^3Anahtar ^4Yok", TAG);
+				CSGO_Case_Key_Menu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Envanterinizde ^3Kasa ^4ve ^3Anahtar ^4Yok", TAG);
+				CSGO_Case_Key_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			new Float: Price = get_pcvar_float(Cvars[24])
+				
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				CSGO_Case_Key[ID][0]++;
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3Kasa ^4Satin Aldin", TAG);
+				CSGO_Case_Key_Menu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				CSGO_Case_Key_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			new Float: Price = get_pcvar_float(Cvars[25])
+				
+			if(TL_ID[ID] >= Price)
+			{
+				TL_ID[ID] -= Price;
+				CSGO_Case_Key[ID][1]++;
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3Anahtar ^4Satin Aldin", TAG);
+				CSGO_Case_Key_Menu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1: ^3%0.2f", TAG, Price);
+				CSGO_Case_Key_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			CSGO_Case_Key_Info_Menu(ID);
+		}
+		case 5 :
+		{
+			CSGO_Case_Key_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Soul(ID)
+{
+	Control_ID[ID][8] = true;
+	Control_ID[ID][7] = false;
+	set_task(1.0, "Color", ID);
+}
+
+public Color(ID)
+{
+	if(Control_ID[ID][8])
+	{
+		set_task(1.0, "Color", ID);
+		
+		switch(random_num(1, 6))
+		{
+			case 1 :
+			{
+				Case_Color[ID] = 1;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(255);
+				write_byte(0);
+				write_byte(0);
+				write_byte(100);
+				message_end();
+			}
+			case 2 :
+			{
+				Case_Color[ID] = 2;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(0);
+				write_byte(255);
+				write_byte(0);
+				write_byte(100);
+				message_end();
+			}
+			case 3 :
+			{
+				Case_Color[ID] = 3;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(0);
+				write_byte(0);
+				write_byte(255);
+				write_byte(100);
+				message_end();
+			}
+			case 4 :
+			{
+				Case_Color[ID] = 4;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(255);
+				write_byte(255);
+				write_byte(0);
+				write_byte(100);
+				message_end();
+			}
+			case 5 :
+			{
+				Case_Color[ID] = 5;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(0);
+				write_byte(255);
+				write_byte(255);
+				write_byte(100);
+				message_end();
+			}
+			case 6 :
+			{
+				Case_Color[ID] = 6;
+				
+				message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+				write_short(~0);
+				write_short(~0);
+				write_short(1<<12);
+				write_byte(200);
+				write_byte(0);
+				write_byte(200);
+				write_byte(100);
+				message_end();
+			}
+		}
+	}
+}
+
+public Fade(ID)
+{
+	if(Control_ID[ID][7])
+	{
+		message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+		write_short(~0);
+		write_short(~0);
+		write_short(1<<12);
+		write_byte(random_num(0, 255));
+		write_byte(random_num(0, 255));
+		write_byte(random_num(0, 255));
+		write_byte(random_num(70, 200));
+		message_end();
+		
+		set_task(0.2, "Fade", ID);
+	}
+}
+
+public Case_Open_End(ID)
+{
+	Control_ID[ID][8] = false;
+	set_task(0.5, "Case_Open_End_Last", ID);
+}
+
+public Case_Open_End_Last(ID)
+{
+	new Name[33];
+	get_user_name(ID, Name, 32);
+	
+	Control_ID[ID][6] = false;
+	rh_emit_sound2(ID, 0, CHAN_AUTO, Case_Sounds[1], VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+	
+	switch(Case_Color[ID])
+	{
+		case 1 :
+		{
+			CSGO_Case_Key[ID][0] += 3;
+			
+			client_print_color(ID, print_team_red, "^3[%s] ^4CS:GO Kasasindan ^3Kirmizi Item ^4Kazandin", TAG);
+			client_print_color(0, print_team_red, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^3Kirmizi Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(255);
+			write_byte(0);
+			write_byte(0);
+			write_byte(255);
+			message_end();
+		}
+		case 2 :
+		{
+			set_entvar(ID, var_movetype, MOVETYPE_NOCLIP);
+			set_task(3.0, "MoveType_Reset", ID),
+			
+			client_print_color(ID, ID, "^3[%s] ^4CS:GO Kasasindan ^3Yesil Item ^4Kazandin", TAG);
+			client_print_color(0, 0, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^3Yesil Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(0);
+			write_byte(255);
+			write_byte(0);
+			write_byte(255);
+			message_end();
+		}
+		case 3 :
+		{
+			set_member(rg_give_item(ID, "weapon_deagle"), m_Weapon_iClip, 1);
+			
+			client_print_color(ID, print_team_blue, "^3[%s] ^4CS:GO Kasasindan ^3Mavi Item ^4Kazandin", TAG);
+			client_print_color(0, print_team_blue, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^3Mavi Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(0);
+			write_byte(0);
+			write_byte(255);
+			write_byte(255);
+			message_end();
+		}
+		case 4 :
+		{
+			set_member(rg_give_item(ID, "weapon_hegrenade"), m_Weapon_iClip, 3);
+			
+			client_print_color(ID, ID, "^3[%s] ^4CS:GO Kasasindan ^1Sari Item ^4Kazandin", TAG);
+			client_print_color(0, 0, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^1Sari Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(255);
+			write_byte(255);
+			write_byte(0);
+			write_byte(255);
+			message_end();
+		}
+		case 5 :
+		{
+			TL_ID[ID] += 50.00;
+			
+			client_print_color(ID, print_team_blue, "^3[%s] ^4CS:GO Kasasindan ^3Turkuaz Item ^4Kazandin", TAG);
+			client_print_color(0, print_team_blue, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^3Turkuaz Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(0);
+			write_byte(255);
+			write_byte(255);
+			write_byte(255);
+			message_end();
+		}
+		case 6 :
+		{
+			CSGO_Case_Key[ID][0] += 2;
+			CSGO_Case_Key[ID][1] += 2;
+			
+			client_print_color(ID, ID, "^3[%s] ^4CS:GO Kasasindan ^3Mor Item ^4Kazandin", TAG);
+			client_print_color(0, 0, "^3[%s] ^4Mahkum ^3%s ^4CS:GO Kasasindan ^3Mor Item ^4Cikardi", TAG, Name);
+			
+			message_begin(MSG_ONE, get_user_msgid("ScreenFade"), {0, 0, 0}, ID);
+			write_short(1<<14);
+			write_short(1<<9);
+			write_short(1<<11);
+			write_byte(200);
+			write_byte(0);
+			write_byte(200);
+			write_byte(255);
+			message_end();
+		}
+	}
+	
+	Case_Color[ID] = 0;
+}
+
+public CSGO_Case_Key_Info_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKasadaki Esyalar", TAG);
+	new Menu = menu_create(Item, "CSGO_Case_Key_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[ \w- \rCS:GO Kasa \y& \rAnahtar \yMenusune Don \w- \d]^n");
+	menu_additem(Menu, Item, "5");
+	
+	formatex(Item, charsmax(Item), "\d[ \w- \rKirmizi \w: \r3 Kasa \w- \d]");
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \rYesil \w: \r3 Sn. Noclip \w- \d]");
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \rMavi \w: \r1 Mermili Deagle \w- \d]");
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \rSari \w: \r3 Tane El Bombasi \w- \d]");
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \rTurkuaz \w: \r+50 TL \w- \d]");
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "\d[ \w- \rMor \w: \r2 Kasa \y+ \r2 Anahtar \w- \d]");
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public MoveType_Reset(ID)
+{
+	set_entvar(ID, var_movetype, MOVETYPE_WALK);
+}
+
+public TL_Transfer_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTL Transfer Menu", TAG);
+	new Menu = menu_create(Item, "TL_Transfer_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y10 TL", KISA_TAG);
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y25 TL", KISA_TAG);
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y50 TL", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y100 TL", KISA_TAG);
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y200 TL", KISA_TAG);
+	menu_additem(Menu, Item, "5");
+	
+	formatex(Item, charsmax(Item), "^n^n\d[ \w- \yCebinizdeki \rTL \w: \r%0.2f \w- \d]", TL_ID[ID]);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public TL_Transfer_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(TL_ID[ID] >= 10.00)
+			{
+				TL_Transfer_ID[ID] = 1;
+				Select_Player(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 10 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			if(TL_ID[ID] >= 25.00)
+			{
+				TL_Transfer_ID[ID] = 2;
+				Select_Player(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 25 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			if(TL_ID[ID] >= 50.00)
+			{
+				TL_Transfer_ID[ID] = 3;
+				Select_Player(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 50 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			if(TL_ID[ID] >= 100.00)
+			{
+				TL_Transfer_ID[ID] = 4;
+				Select_Player(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 100 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(TL_ID[ID] >= 200.00)
+			{
+				TL_Transfer_ID[ID] = 5;
+				Select_Player(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 200 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Select_Player(ID)
+{
+	static Item[128];
+	new Players[32], Num_T, New_ID, Name[33], Str[6];
+	get_players(Players, Num_T, "cehi", "TERRORIST");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBir Oyuncu Sec", TAG);
+	new Menu = menu_create(Item, "Select_Player_Handler");
+	
+	for(new i; i < Num_T; i++)
+	{
+		New_ID = Players[i];
+		
+		if(ID != New_ID)
+		{
+			num_to_str(New_ID, Str, 5);
+			get_user_name(New_ID, Name, 32);
+			
+			if(get_user_flags(New_ID) & AUTHORITY_3)
+			{
+				formatex(Item, charsmax(Item), "\r%s", Name);
+			}
+			else
+			{
+				formatex(Item, charsmax(Item), "\y%s", Name);
+			}
+			menu_additem(Menu, Item, Str);
+		}
+	}
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Select_Player_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Name_ID[33], Name_New_ID[33];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new New_ID = str_to_num(Data);
+	
+	switch(TL_Transfer_ID[ID])
+	{
+		case 1 :
+		{
+			if(TL_ID[ID] >= 10.00)
+			{
+				TL_ID[ID] -= 10.00;
+				TL_ID[New_ID] += 10.00;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkum ^3%s ^4Size^3 10 TL ^4Gonderdi", TAG, Name_ID);
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3%s ^4Adli Mahkuma^3 10 TL ^4Gonderdin", TAG, Name_New_ID);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 10 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 2 :
+		{
+			if(TL_ID[ID] >= 25.00)
+			{
+				TL_ID[ID] -= 25.00;
+				TL_ID[New_ID] += 25.00;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkum ^3%s ^4Size^3 25 TL ^4Gonderdi", TAG, Name_ID);
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3%s ^4Adli Mahkuma^3 25 TL ^4Gonderdin", TAG, Name_New_ID);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 25 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			if(TL_ID[ID] >= 50.00)
+			{
+				TL_ID[ID] -= 50.00;
+				TL_ID[New_ID] += 50.00;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkum ^3%s ^4Size^3 50 TL ^4Gonderdi", TAG, Name_ID);
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3%s ^4Adli Mahkuma^3 50 TL ^4Gonderdin", TAG, Name_New_ID);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 50 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 4 :
+		{
+			if(TL_ID[ID] >= 100.00)
+			{
+				TL_ID[ID] -= 100.00;
+				TL_ID[New_ID] += 100.00;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkum ^3%s ^4Size^3 100 TL ^4Gonderdi", TAG, Name_ID);
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3%s ^4Adli Mahkuma^3 100 TL ^4Gonderdin", TAG, Name_New_ID);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 100 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(TL_ID[ID] >= 200.00)
+			{
+				TL_ID[ID] -= 200.00;
+				TL_ID[New_ID] += 200.00;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkum ^3%s ^4Size^3 200 TL ^4Gonderdi", TAG, Name_ID);
+				client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3%s ^4Adli Mahkuma^3 200 TL ^4Gonderdin", TAG, Name_New_ID);
+				JBMenu(ID);
+			}
+			else
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Yetersiz TL^1.^4Gereken TL ^1:^3 200 TL", TAG);
+				TL_Transfer_Menu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Bonus_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBonus Menu", TAG);
+	new Menu = menu_create(Item, "Bonus_Menu_Handler");
+	
+	if(get_user_flags(ID) & AUTHORITY_1)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y200 HP", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y100 Armor", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBomba Paketi", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r2 Adet \yKasa \r& \yAnahtar", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySansina Gore Bonus \rTL", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+	}
+	else if(get_user_flags(ID) & AUTHORITY_2)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y100 HP", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y50 Armor", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEl Bombasi", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKasa \r& \yAnahtar", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySansina Gore Bonus \rTL", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+	}
+	else if(get_user_flags(ID) & AUTHORITY_3)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y50 HP", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y25 Armor", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySis Bombasi", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r2 \yAdet Kasa", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r+2.50 \yTL", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y25 HP", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \y10 Armor", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySis Bombasi Ya Da Flash", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yKasa Ya Da Anahtar", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r+1.00 \yTL^n", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+		formatex(Item, charsmax(Item), "\d[ \w- \rTs3 \yBaglan \rYetki \yAl \w- \d]", KISA_TAG);
+		menu_additem(Menu, Item, "6");
+	}
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Bonus_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			Control_ID[ID][9] = true;
+			
+			if(get_user_flags(ID) & AUTHORITY_1)
+			{
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 200.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 200 HP ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_2)
+			{
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 100.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 100 HP ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 50.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 50 HP ^4Aldin", TAG);
+			}
+			else
+			{
+				set_entvar(ID, var_health, Float: get_entvar(ID, var_health) + 25.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 25 HP ^4Aldin", TAG);
+			}
+			
+			JBMenu(ID);
+		}
+		case 2 :
+		{
+			Control_ID[ID][9] = true;
+			
+			if(get_user_flags(ID) & AUTHORITY_1)
+			{
+				set_entvar(ID, var_armorvalue, Float: get_entvar(ID, var_armorvalue) + 100.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 100 HP ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_2)
+			{
+				set_entvar(ID, var_armorvalue, Float: get_entvar(ID, var_armorvalue) + 50.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 50 HP ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				set_entvar(ID, var_armorvalue, Float: get_entvar(ID, var_armorvalue) + 25.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 25 HP ^4Aldin", TAG);
+			}
+			else
+			{
+				set_entvar(ID, var_armorvalue, Float: get_entvar(ID, var_armorvalue) + 10.0);
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 10 HP ^4Aldin", TAG);
+			}
+			
+			JBMenu(ID);
+		}
+		case 3 :
+		{
+			Control_ID[ID][9] = true;
+			
+			if(get_user_flags(ID) & AUTHORITY_1)
+			{
+				rg_give_item(ID, "weapon_hegrenade");
+				rg_give_item(ID, "weapon_flashbang");
+				rg_give_item(ID, "weapon_smokegrenade");
+				
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Bomba Paketi ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_2)
+			{
+				rg_give_item(ID, "weapon_hegrenade");
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3El Bombasi ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				rg_give_item(ID, "weapon_smokegrenade");
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Sis Bombasi ^4Aldin", TAG);
+			}
+			else
+			{
+				switch(random_num(1, 2))
+				{
+					case 1 :
+					{
+						rg_give_item(ID, "weapon_flashbang");
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Flash ^4Aldin", TAG);
+					}
+					case 2 :
+					{
+						rg_give_item(ID, "weapon_smokegrenade");
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Sis Bombasi ^4Aldin", TAG);
+					}
+				}
+			}
+			
+			JBMenu(ID);
+		}
+		case 4 :
+		{
+			Control_ID[ID][9] = true;
+			
+			if(get_user_flags(ID) & AUTHORITY_1)
+			{
+				CSGO_Case_Key[ID][0] += 2;
+				CSGO_Case_Key[ID][1] += 2;
+				
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 2 ^4Adet ^3Kasa ^4ve ^3Anahtar ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_2)
+			{
+				CSGO_Case_Key[ID][0]++;
+				CSGO_Case_Key[ID][1]++;
+				
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Kasa ^4ve ^3Anahtar ^4Aldin", TAG);
+			}
+			else if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				CSGO_Case_Key[ID][0] += 2;
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 2 ^4Adet ^3Kasa ^4Aldin", TAG);
+			}
+			else
+			{
+				switch(random_num(1, 2))
+				{
+					case 1 :
+					{
+						CSGO_Case_Key[ID][0]++;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Kasa ^4Aldin", TAG);
+					}
+					case 2 :
+					{
+						CSGO_Case_Key[ID][1]++;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden ^3Anahtar ^4Aldin", TAG);
+					}
+				}
+			}
+			
+			JBMenu(ID);
+		}
+		case 5 :
+		{
+			Control_ID[ID][9] = true;
+			
+			if(get_user_flags(ID) & AUTHORITY_1)
+			{
+				switch(random_num(1, 2))
+				{
+					case 1 :
+					{
+						TL_ID[ID] += 25.00;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 25.00 TL ^4Aldin", TAG);
+					}
+					case 2 :
+					{
+						TL_ID[ID] += 10.00;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 10.00 TL ^4Aldin", TAG);
+					}
+				}
+			}
+			else if(get_user_flags(ID) & AUTHORITY_2)
+			{
+				switch(random_num(1, 2))
+				{
+					case 1 :
+					{
+						TL_ID[ID] += 10.00;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 10.00 TL ^4Aldin", TAG);
+					}
+					case 2 :
+					{
+						TL_ID[ID] += 5.0;
+						client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 5.00 TL ^4Aldin", TAG);
+					}
+				}
+			}
+			else if(get_user_flags(ID) & AUTHORITY_3)
+			{
+				TL_ID[ID] += 2.50;
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 2.50 TL ^4Aldin", TAG);
+			}
+			else
+			{
+				TL_ID[ID] += 1.00;
+				client_print_color(ID, ID, "^3[%s] ^4Bonus Menuden^3 1.00 TL ^4Aldin", TAG);
+			}
+			
+			JBMenu(ID);
+		}
+		case 6 :
+		{
+			if(is_user_steam(ID))
+			{
+				client_print_color(ID, ID, "^3[%s] ^4TeamSpeak3 IP ^1: ^3%s", TAG, TS3_IP);
+			}
+			else
+			{
+				client_cmd(ID, "say /ts3");
+			}
+			
+			Bonus_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Riot_Menu(ID)
+{
+	static Item[128];
+	new Players[32], Num_Alive_T, New_ID, Num_1, Num_2;
+	get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+	
+	for(new i; i < Num_Alive_T; i++)
+	{
+		New_ID = Players[i];
+		
+		if(get_user_flags(New_ID) & AUTHORITY_1)
+		{
+			Num_1++;
+		}
+		else if(get_user_flags(New_ID) & AUTHORITY_3)
+		{
+			Num_2++;
+		}
+	}
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAyaklanma Menu^n\d[ \w- \yAyaklanma Uyesi \w: \r%d \w- \d]^n\d[ \w- \yAyaklanma Baskani \w: \r%d \w- \d]", KISA_TAG, Num_2, Num_1);
+	new Menu = menu_create(Item, "Riot_Menu_Handler");
+	
+	if(get_user_flags(ID) & AUTHORITY_1)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlara Rastgele TL Ver", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlara Rastgele HP Ver", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlara Rastgele Bomba Ver^n", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyanlarin Yerlerini Degistir", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		
+		formatex(Item, charsmax(Item), "^n^n\d[ \w- \yBu Ozellikler Sadece \rAyaklanma Uyelerine \yVerilir \w- \d]");
+		menu_addtext(Menu, Item);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAyaklanma Reklami At \d[\r+0.50 TL\d]", KISA_TAG);
+		menu_additem(Menu, Item, "5");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyanlari Chatten Cildirt", KISA_TAG);
+		menu_additem(Menu, Item, "6");
+	}
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Riot_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT || !Control[3])
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6], Name[33];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	get_user_name(ID, Name, 32);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			new Players[32], Num_Alive_T, New_ID;
+			get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+			
+			for(new i; i < Num_Alive_T; i++)
+			{
+				New_ID = Players[i];
+				
+				if(get_user_flags(New_ID) & AUTHORITY_3)
+				{
+					switch(random_num(1, 4))
+					{
+						case 1 :
+						{
+							TL_ID[ID] += 0.50;
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+0.50 TL ^4Kazandirdi", TAG, Name);
+						}
+						case 2 :
+						{
+							TL_ID[ID] += 1.00;
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+1.00 TL ^4Kazandirdi", TAG, Name);
+						}
+						case 3 :
+						{
+							TL_ID[ID] += 2.50;
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+2.50 TL ^4Kazandirdi", TAG, Name);
+						}
+						case 4 :
+						{
+							TL_ID[ID] += 5.0;
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+5.00 TL ^4Kazandirdi", TAG, Name);
+						}
+					}
+				}
+			}
+			
+			Control_ID[ID][10] = true;
+			client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Ayaklanma Uyelerine ^3Rastgele TL ^4Verdi", TAG, Name);
+			JBMenu(ID);
+		}
+		case 2 :
+		{
+			new Players[32], Num_Alive_T, New_ID;
+			get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+			
+			for(new i; i < Num_Alive_T; i++)
+			{
+				New_ID = Players[i];
+				
+				if(get_user_flags(New_ID) & AUTHORITY_3)
+				{
+					switch(random_num(1, 4))
+					{
+						case 1 :
+						{
+							set_entvar(New_ID, var_health, Float: get_entvar(New_ID, var_health) + 10.0);
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+10 HP ^4Kazandirdi", TAG, Name);
+						}
+						case 2 :
+						{
+							set_entvar(New_ID, var_health, Float: get_entvar(New_ID, var_health) + 25.0);
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+25 HP ^4Kazandirdi", TAG, Name);
+						}
+						case 3 :
+						{
+							set_entvar(New_ID, var_health, Float: get_entvar(New_ID, var_health) + 50.0);
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+50 HP ^4Kazandirdi", TAG, Name);
+						}
+						case 4 :
+						{
+							set_entvar(New_ID, var_health, Float: get_entvar(New_ID, var_health) + 100.0);
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3+100 HP ^4Kazandirdi", TAG, Name);
+						}
+					}
+				}
+			}
+			
+			Control_ID[ID][10] = true;
+			client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Ayaklanma Uyelerine ^3Rastgele HP ^4Verdi", TAG, Name);
+			JBMenu(ID);
+		}
+		case 3 :
+		{
+			new Players[32], Num_Alive_T, New_ID;
+			get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+			
+			for(new i; i < Num_Alive_T; i++)
+			{
+				New_ID = Players[i];
+				
+				if(get_user_flags(New_ID) & AUTHORITY_3)
+				{
+					switch(random_num(1, 2))
+					{
+						case 1 :
+						{
+							rg_give_item(New_ID, "weapon_hegrenade");
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3El Bombasi ^4Kazandirdi", TAG, Name);
+						}
+						case 2 :
+						{
+							rg_give_item(New_ID, "weapon_smokegrenade");
+							client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Sana ^3Sis Bombasi ^4Kazandirdi", TAG, Name);
+						}
+					}
+				}
+			}
+			
+			Control_ID[ID][10] = true;
+			client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Ayaklanma Uyelerine ^3Rastgele Bomba ^4Verdi", TAG, Name);
+			JBMenu(ID);
+		}
+		case 4 :
+		{
+			new Players[32], Num_Alive_CT, New_ID, Float: Origin[33][3];
+			get_players(Players, Num_Alive_CT, "acehi", "CT");
+			
+			for(new i; i < Num_Alive_CT; i++)
+			{
+				New_ID = Players[i];
+				get_entvar(New_ID, var_origin, Origin[New_ID]);
+			}
+			
+			for(new i; i < Num_Alive_CT; i++)
+			{
+				New_ID = Players[i];
+				set_entvar(New_ID, var_origin, Origin[random_num(0, Num_Alive_CT)]);
+			}
+			
+			Control_ID[ID][10] = true;
+			client_print_color(New_ID, New_ID, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Gardiyanlarin Yerini Degistirdi", TAG, Name);
+			JBMenu(ID);
+		}
+		case 5 :
+		{
+			Control_ID[ID][10] = true;
+			client_print_color(ID, ID, "^3[%s] ^4Ayaklanma Reklami Attin ve^3 0.50 TL ^4Kazandin", TAG);
+			client_print_color(0, 0, "^3[%s] ^4Isyan Cok, Eglence Bol^1.^4Hadi Sende Aramiza Katil ve Eglencenin Dibine Vur ^1--> ^3Say /Ts3", TAG);
+			JBMenu(ID);
+		}
+		case 6 :
+		{
+			new Players[32], Num_Alive_CT, New_ID, Name[33];
+			get_players(Players, Num_Alive_CT, "acehi", "CT");
+			get_user_name(ID, Name, 32);
+				
+			for(new i; i < Num_Alive_CT; i++)
+			{
+				New_ID = Players[i];
+				client_print_color(New_ID, New_ID, "^3[%s] ^4Mahkum ^3%s ^4Kelleni Alacakmis Kanka^1, ^3Haberin Ola", TAG, Name);
+			}
+				
+			Control_ID[ID][10] = true;
+			client_print_color(ID, ID, "^3[%s] ^4Gardiyanlari Cildirttin ^3:)", TAG);
+			JBMenu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Job_Menu(ID)
+{
+	static Item[128];
+	new Job_Infos[64];
+	
+	switch(Job_ID[ID][0])
+	{
+		case 1 :
+		{
+			Job_Infos = "^n\d[ \w- \yAktif Meslek \w: \rTL Canavari \w- \d]";
+		}
+		case 2 :
+		{
+			Job_Infos = "^n\d[ \w- \yAktif Meslek \w: \rSansli Adam \w- \d]";
+		}
+		case 3 :
+		{
+			Job_Infos = "^n\d[ \w- \yAktif Meslek \w: \rGuclu Mahkum \w- \d]";
+		}
+		case 4 :
+		{
+			Job_Infos = "^n\d[ \w- \yAktif Meslek \w: \rBombaci Mulayim \w- \d]";
+		}
+		case 5 :
+		{
+			Job_Infos = "^n\d[ \w- \yAktif Meslek \w: \rGardiyan Avcisi \w- \d]";
+		}
+	}
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMeslek Menu%s", TAG, Job_Infos);
+	new Menu = menu_create(Item, "Job_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTL Canavari", KISA_TAG);
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySansli Adam", KISA_TAG);
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGuclu Mahkum", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBombaci Mulayim", KISA_TAG);
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGardiyan Avcisi", KISA_TAG);
+	menu_additem(Menu, Item, "5");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Job_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Job_ID[ID][0] == 1)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Meslegin Zaten ^3TL Canavari", TAG);
+				Job_Menu(ID);
+			}
+			else
+			{
+				Job_Select_Menu(ID, 1);
+			}
+		}
+		case 2 :
+		{
+			if(Job_ID[ID][0] == 2)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Meslegin Zaten ^3Sansli Adam", TAG);
+				Job_Menu(ID);
+			}
+			else
+			{
+				Job_Select_Menu(ID, 2);
+			}
+		}
+		case 3 :
+		{
+			if(Job_ID[ID][0] == 3)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Meslegin Zaten ^3Guclu Mahkum", TAG);
+				Job_Menu(ID);
+			}
+			else
+			{
+				Job_Select_Menu(ID, 3);
+			}
+		}
+		case 4 :
+		{
+			if(Job_ID[ID][0] == 4)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Meslegin Zaten ^3Bombaci Mulayim", TAG);
+				Job_Menu(ID);
+			}
+			else
+			{
+				Job_Select_Menu(ID, 4);
+			}
+		}
+		case 5 :
+		{
+			if(Job_ID[ID][0] == 5)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Meslegin Zaten ^3Gardiyan Avcisi", TAG);
+				Job_Menu(ID);
+			}
+			else
+			{
+				Job_Select_Menu(ID, 5);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Job_Select_Menu(ID, Job_Num)
+{
+	static Item[128];
+	new Job_Infos_1[128], Job_Infos_2[128], Job_Infos_3[128];
+	
+	switch(Job_ID[ID][0])
+	{
+		case 1 :
+		{
+			Job_Infos_1 = "^n\d[ \w- \yAktif Meslek \w: \rTL Canavari \w- \d]";
+		}
+		case 2 :
+		{
+			Job_Infos_1 = "^n\d[ \w- \yAktif Meslek \w: \rSansli Adam \w- \d]";
+		}
+		case 3 :
+		{
+			Job_Infos_1 = "^n\d[ \w- \yAktif Meslek \w: \rGuclu Mahkum \w- \d]";
+		}
+		case 4 :
+		{
+			Job_Infos_1 = "^n\d[ \w- \yAktif Meslek \w: \rBombaci Mulayim \w- \d]";
+		}
+		case 5 :
+		{
+			Job_Infos_1 = "^n\d[ \w- \yAktif Meslek \w: \rGardiyan Avcisi \w- \d]";
+		}
+	}
+	
+	switch(Job_Num)
+	{
+		case 1 :
+		{
+			Job_Infos_2 = "^n\d[ \w- \yAktif Olacak Meslek \w: \rTL Canavari \w- \d]";
+			Job_Infos_3 = "\d[ \w- \yYasadigin Her \r1 \yDakikada \r1.25 TL \yKazan \w- \d]";
+		}
+		case 2 :
+		{
+			Job_Infos_2 = "^n\d[ \w- \yAktif Olacak Meslek \w: \rSansli Adam \w- \d]";
+			Job_Infos_3 = "\d[ \w- \r1/4 \yOlunce Yeniden Dogma Sansi \w- \d]";
+		}
+		case 3 :
+		{
+			Job_Infos_2 = "^n\d[ \w- \yAktif Olacak Meslek \w: \rGuclu Mahkum \w- \d]";
+			Job_Infos_3 = "\d[ \w- \yDogdugunda Canin \r150 \yOlur \w- \d]";
+		}
+		case 4 :
+		{
+			Job_Infos_2 = "^n\d[ \w- \yAktif Olacak Meslek \w: \rBombaci Mulayim \w- \d]";
+			Job_Infos_3 = "\d[ \w- \yHer Round \rEl Bombasi \yYa Da \rSis Bombasi \w- \d]";
+		}
+		case 5 :
+		{
+			Job_Infos_2 = "^n\d[ \w- \yAktif Olacak Meslek \w: \rGardiyan Avcisi \w- \d]";
+			Job_Infos_3 = "\d[ \w- \yGardiyan Oldurunce \r1.50 TL \w& \r+10 HP \w- \d]";
+		}
+	}
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMeslek Secimini Onayliyor Musun\r?", TAG);
+	new Menu = menu_create(Item, "Job_Select_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yEvet", KISA_TAG);
+	
+	switch(Job_Num)
+	{
+		case 1 :
+		{
+			menu_additem(Menu, Item, "1");
+		}
+		case 2 :
+		{
+			menu_additem(Menu, Item, "2");
+		}
+		case 3 :
+		{
+			menu_additem(Menu, Item, "3");
+		}
+		case 4 :
+		{
+			menu_additem(Menu, Item, "4");
+		}
+		case 5 :
+		{
+			menu_additem(Menu, Item, "5");
+		}
+	}
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yHayir", KISA_TAG);
+	menu_additem(Menu, Item, "6");
+	
+	formatex(Item, charsmax(Item), "%s", Job_Infos_1);
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "%s", Job_Infos_2);
+	menu_addtext(Menu, Item);
+	formatex(Item, charsmax(Item), "%s", Job_Infos_3);
+	menu_addtext(Menu, Item);
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Job_Select_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1..5 :
+		{
+			Job_ID[ID][1] = Key;
+			
+			switch(Job_ID[ID][1])
+			{
+				case 1 :
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Bir Sonraki Round Meslegin ^3TL Canavari ^4Olacak", TAG);
+				}
+				case 2 :
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Bir Sonraki Round Meslegin ^3Sansli Adam ^4Olacak", TAG);
+				}
+				case 3 :
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Bir Sonraki Round Meslegin ^3Guclu Mahkum ^4Olacak", TAG);
+				}
+				case 4 :
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Bir Sonraki Round Meslegin ^3Bombaci Mulayim ^4Olacak", TAG);
+				}
+				case 5 :
+				{
+					client_print_color(ID, ID, "^3[%s] ^4Bir Sonraki Round Meslegin ^3Gardiyan Avcisi ^4Olacak", TAG);
+				}
+			}
+			
+			JBMenu(ID);
+		}
+		case 6 :
+		{
+			client_print_color(ID, ID, "^3[%s] ^4Meslek Secimini ^3Iptal ^4Ettin", TAG);
+			JBMenu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Quest_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGorev Menu", TAG);
+	new Menu = menu_create(Item, "Quest_Menu_Handler");
+	
+	if(Control_ID[ID][11])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi", KISA_TAG);
+	}
+	else if(Quest_ID[ID][0] < 5)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r%d \yKere Kasa Ac", KISA_TAG, 5 - Quest_ID[ID][0]);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi \d[\r+10.00 TL Almak Icin Tikla\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "1");
+	
+	if(Control_ID[ID][12])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi", KISA_TAG);
+	}
+	else if(Quest_ID[ID][1] < 10)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r%d \yKere Gardiyan Oldur", KISA_TAG, 10 - Quest_ID[ID][1]);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi \d[\r+15.00 TL Almak Icin Tikla\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "2");
+	
+	new Time = get_user_time(ID, 1) / 60;
+	
+	if(Control_ID[ID][13])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi", KISA_TAG);
+	}
+	else if(Time < 20)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r%d \yDakika Serverde Takil", KISA_TAG, 20 - Time);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi \d[\r+10.00 TL Almak Icin Tikla\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "3");
+	
+	if(Control_ID[ID][14])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi", KISA_TAG);
+	}
+	else if(Quest_ID[ID][2] < 5)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \r%d \yKere Takim Arkadasini Oldur", KISA_TAG, 5 - Quest_ID[ID][2]);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi \d[\r+10.00 TL Almak Icin Tikla\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "4");
+	
+	if(Control_ID[ID][15])
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi", KISA_TAG);
+	}
+	else if(Quest_ID[ID][3] < 20)
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yAlisveris Menusunden \r%d \yEsya Al", KISA_TAG, 20 - Quest_ID[ID][3]);
+	}
+	else
+	{
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \wGorev Tamamlandi \d[\r+20.00 TL Almak Icin Tikla\d]", KISA_TAG);
+	}
+	menu_additem(Menu, Item, "5");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Quest_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Control_ID[ID][11])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Zaten Tamamladin", TAG);
+				Quest_Menu(ID);
+			}
+			else if(Quest_ID[ID][0] < 5)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamlamak Icin ^3%d Kere Kasa Ac", TAG, 5 - Quest_ID[ID][0]);
+				Quest_Menu(ID);
+			}
+			else
+			{
+				TL_ID[ID] += 10.00;
+				Control_ID[ID][11] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamladin ve^3 10.00 TL ^4Kazandin", TAG);
+				JBMenu(ID);
+			}
+		}
+		case 2 :
+		{
+			if(Control_ID[ID][12])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Zaten Tamamladin", TAG);
+				Quest_Menu(ID);
+			}
+			else if(Quest_ID[ID][1] < 10)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamlamak Icin ^3%d Kere Gardiyan Oldur", TAG, 10 - Quest_ID[ID][1]);
+				Quest_Menu(ID);
+			}
+			else
+			{
+				TL_ID[ID] += 15.00;
+				Control_ID[ID][12] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamladin ve^3 15.00 TL ^4Kazandin", TAG);
+				JBMenu(ID);
+			}
+		}
+		case 3 :
+		{
+			new Time = get_user_time(ID, 1) / 60;
+			
+			if(Control_ID[ID][13])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Zaten Tamamladin", TAG);
+				Quest_Menu(ID);
+			}
+			else if(Time < 20)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamlamak Icin ^3%d Dakika Serverde Takil", TAG, 20 - Time);
+				Quest_Menu(ID);
+			}
+			else
+			{
+				TL_ID[ID] += 10.00;
+				Control_ID[ID][13] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamladin ve^3 10.00 TL ^4Kazandin", TAG);
+				JBMenu(ID);
+			}
+		}
+		case 4 :
+		{
+			if(Control_ID[ID][14])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Zaten Tamamladin", TAG);
+				Quest_Menu(ID);
+			}
+			else if(Quest_ID[ID][2] < 5)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamlamak Icin ^3%d Kere Takim Arkadasini Oldur", TAG, 5 - Quest_ID[ID][2]);
+				Quest_Menu(ID);
+			}
+			else
+			{
+				TL_ID[ID] += 10.00;
+				Control_ID[ID][14] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamladin ve^3 10.00 TL ^4Kazandin", TAG);
+				JBMenu(ID);
+			}
+		}
+		case 5 :
+		{
+			if(Control_ID[ID][15])
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Zaten Tamamladin", TAG);
+				Quest_Menu(ID);
+			}
+			else if(Quest_ID[ID][3] < 20)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamlamak Icin ^3Alisveris Menuden %d Esya Al", TAG, 20 - Quest_ID[ID][3]);
+				Quest_Menu(ID);
+			}
+			else
+			{
+				TL_ID[ID] += 20.00;
+				Control_ID[ID][15] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Gorevi Tamamladin ve^3 20.00 TL ^4Kazandin", TAG);
+				JBMenu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Player_Settings_Info_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yOyuncu Ayar \r& \yBilgi Menu", TAG);
+	new Menu = menu_create(Item, "Player_Settings_Info_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yChati %s", KISA_TAG, Control_ID[ID][16] ? "AC" : "KAPAT");
+	menu_additem(Menu, Item, "1");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yOyuncu Modellerini %s^n", KISA_TAG, Control_ID[ID][17] ? "AC" : "KAPAT");
+	menu_additem(Menu, Item, "2");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rFPS \yAyar Menu", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rHarita \yIsmini Ogren", KISA_TAG);
+	menu_additem(Menu, Item, "4");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \ySaati \r& \yTarihi Ogren", KISA_TAG);
+	menu_additem(Menu, Item, "5");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rEkran Goruntusu \w[SS] \yAl^n", KISA_TAG);
+	menu_additem(Menu, Item, "6");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public Player_Settings_Info_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			if(Control_ID[ID][16])
+			{
+				Control_ID[ID][16] = false;
+				client_print_color(ID, ID, "^3[%s] ^4Chat ^3Acildi", TAG);
+			}
+			else
+			{
+				Control_ID[ID][16] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Chat ^3Kapatildi", TAG);
+			}
+			
+			client_cmd(ID, "hud_saytext");
+			Player_Settings_Info_Menu(ID);
+		}
+		case 2 :
+		{
+			if(Control_ID[ID][17])
+			{
+				Control_ID[ID][17] = false;
+				client_cmd(ID, "cl_minmodels 0");
+				client_print_color(ID, ID, "^3[%s] ^4Oyuncu Modelleri ^3Acildi", TAG);
+			}
+			else
+			{
+				Control_ID[ID][17] = true;
+				client_cmd(ID, "cl_minmodels 1");
+				client_print_color(ID, ID, "^3[%s] ^4Oyuncu Modelleri ^3Kapatildi", TAG);
+			}
+			
+			Player_Settings_Info_Menu(ID);
+		}
+		case 3 :
+		{
+			FPS_Settings_Menu(ID);
+		}
+		case 4 :
+		{
+			new Map_Name[64];
+			get_mapname(Map_Name, 63);
+			client_print_color(ID, ID, "^3[%s] ^4Harita Ismi ^1: ^3%s", TAG, Map_Name);
+			Player_Settings_Info_Menu(ID);
+		}
+		case 5 :
+		{
+			new Hour[9], Date[11];
+			get_time("%H:%M:%S", Hour, 8);
+			get_time("%d/%m/%Y", Date, 10);
+			client_print_color(ID, ID, "^3[%s] ^4Saat ^1: ^3%s ^1- ^4Tarih ^1: ^3%s", TAG, Hour, Date);
+			Player_Settings_Info_Menu(ID);
+		}
+		case 6 :
+		{
+			client_cmd(ID, "snapshot");
+			client_print_color(ID, ID, "^3[%s] ^4Basarili Bir Sekilde ^3Ekran Goruntusu ^4Aldin", TAG);
+			Player_Settings_Info_Menu(ID);
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public FPS_Settings_Menu(ID)
+{
+	static Item[128];
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \rFPS \yAyar Menu", TAG);
+	new Menu = menu_create(Item, "FPS_Settings_Menu_Handler");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yFPS Ayarlari Uygula^n", KISA_TAG);
+	menu_additem(Menu, Item, "1");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlari Gizle", KISA_TAG);
+	menu_additem(Menu, Item, "2");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMahkumlari Goster", KISA_TAG);
+	menu_additem(Menu, Item, "3");
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+public FPS_Settings_Menu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	switch(Key)
+	{
+		case 1 :
+		{
+			client_cmd(ID, "fps_max 101; rate 25000; cl_cmdrate 101; cl_updaterate 101");
+			
+			if(is_user_steam(ID))
+			{
+				client_cmd(ID, "fps_override 101");
+			}
+			else
+			{
+				client_cmd(ID, "fps_modem 101");
+			}
+			
+			client_print_color(ID, ID, "^3[%s] ^3FPS ^4Ayarlari Uygulandi", TAG);
+			FPS_Settings_Menu(ID);
+		}
+		case 2 :
+		{
+			if(get_cvar_num("semiclip") != 1)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Semiclip Kapaliyken Bu Ayari Yapamazsin", TAG);
+				FPS_Settings_Menu(ID);
+			}
+			else
+			{
+				Control_ID[ID][18] = true;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkumlari Gizledin", TAG);
+				FPS_Settings_Menu(ID);
+			}
+		}
+		case 3 :
+		{
+			if(get_cvar_num("semiclip") != 1)
+			{
+				client_print_color(ID, ID, "^3[%s] ^4Semiclip Kapaliyken Bu Ayari Yapamazsin", TAG);
+				FPS_Settings_Menu(ID);
+			}
+			else
+			{
+				Control_ID[ID][18] = false;
+				client_print_color(ID, ID, "^3[%s] ^4Mahkumlarin Gizlenmesini Kaldirdin", TAG);
+				FPS_Settings_Menu(ID);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public MGMenu(ID)
+{
+	if(!is_user_alive(ID))
+	{
+		client_print_color(ID, ID, "^3[%s] ^4MGMenuye ^3Oluyken ^4Giris Yapamazsin", TAG);
+	}
+	else if(get_member(ID, m_iTeam) != TEAM_CT)
+	{
+		client_print_color(ID, ID, "^3[%s] ^4MGMenuye Sadece ^3Gardiyanlar ^4Giris Yapabilir", TAG);
+	}
+	else
+	{
+		static Item[128];
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yMGMenu", TAG);
+		new Menu = menu_create(Item, "MGMenu_Handler");
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTL Ver", KISA_TAG);
+		menu_additem(Menu, Item, "1");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yTL Al^n", KISA_TAG);
+		menu_additem(Menu, Item, "2");
+		
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yButun Mahkumlara TL Ver", KISA_TAG);
+		menu_additem(Menu, Item, "3");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yYasayan Mahkumlara TL Ver", KISA_TAG);
+		menu_additem(Menu, Item, "4");
+		
+		menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+		menu_setprop(Menu, MPROP_BACKNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+		menu_setprop(Menu, MPROP_NEXTNAME, Item);
+		formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+		menu_setprop(Menu, MPROP_EXITNAME, Item);
+		menu_display(ID, Menu, 0);
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public MGMenu_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	new Key = str_to_num(Data);
+	
+	MG_Num[ID][0] = Key;
+	
+	switch(Key)
+	{
+		case 1..2 :
+		{
+			Select_Player_TL(ID);
+		}
+		case 3..4 :
+		{
+			client_cmd(ID, "messagemode TL_MIKTARI");
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Select_Player_TL(ID)
+{
+	static Item[128];
+	new Players[32], Num_T, New_ID, Name[33], Str[6];
+	get_players(Players, Num_T, "acehi", "TERRORIST");
+	
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yBir Oyuncu Sec", TAG);
+	new Menu = menu_create(Item, "Select_Player_TL_Handler");
+	
+	for(new i; i < Num_T; i++)
+	{
+		New_ID = Players[i];
+		
+		if(ID != New_ID)
+		{
+			num_to_str(New_ID, Str, 5);
+			get_user_name(New_ID, Name, 32);
+			
+			if(get_user_flags(New_ID) & AUTHORITY_3)
+			{
+				formatex(Item, charsmax(Item), "\r%s \w| \d[\r%0.2f TL\d] \w| \rCanli", Name, TL_ID[New_ID]);
+			}
+			else
+			{
+				formatex(Item, charsmax(Item), "\y%s \w| \d[\r%0.2f TL\d] \w| \rCanli", Name, TL_ID[New_ID]);
+			}
+			menu_additem(Menu, Item, Str);
+		}
+	}
+	
+	get_players(Players, Num_T, "bcehi", "TERRORIST");
+	
+	for(new i; i < Num_T; i++)
+	{
+		New_ID = Players[i];
+		
+		if(ID != New_ID)
+		{
+			num_to_str(New_ID, Str, 5);
+			get_user_name(New_ID, Name, 32);
+			
+			if(get_user_flags(New_ID) & AUTHORITY_3)
+			{
+				formatex(Item, charsmax(Item), "\r%s \w| \d[\r%0.2f TL\d] \w| \rOlu", Name, TL_ID[New_ID]);
+			}
+			else
+			{
+				formatex(Item, charsmax(Item), "\y%s \w| \d[\r%0.2f TL\d] \w| \rOlu", Name, TL_ID[New_ID]);
+			}
+			menu_additem(Menu, Item, Str);
+		}
+	}
+	
+	menu_setprop(Menu, MPROP_NUMBER_COLOR, "\r");
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yGeri", KISA_TAG);
+	menu_setprop(Menu, MPROP_BACKNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yIleri", KISA_TAG);
+	menu_setprop(Menu, MPROP_NEXTNAME, Item);
+	formatex(Item, charsmax(Item), "\d[\r%s\d] \w| \yCikis", KISA_TAG);
+	menu_setprop(Menu, MPROP_EXITNAME, Item);
+	menu_display(ID, Menu, 0);
+	
+	return PLUGIN_HANDLED;
+}
+
+
+public Select_Player_TL_Handler(ID, Menu, Item)
+{
+	if(Item == MENU_EXIT)
+	{
+		menu_destroy(Menu);
+		return PLUGIN_HANDLED;
+	}
+	
+	new Data[6];
+	menu_item_getinfo(Menu, Item, _, Data, 5);
+	MG_Num[ID][1] = str_to_num(Data);
+	client_cmd(ID, "messagemode TL_MIKTARI");
+	return PLUGIN_HANDLED;
+}
+
+public TL_Select(ID)
+{
+	if(!is_user_alive(ID) || get_member(ID, m_iTeam) != TEAM_CT || MG_Num[ID][0] == 0)
+	{
+		return PLUGIN_HANDLED;
+	}
+	
+	new Arg[33], Amount;
+	read_args(Arg, charsmax(Arg));
+	remove_quotes(Arg);
+	Amount = str_to_num(Arg);
+	
+	if(equal(Arg, "") || !is_str_num(Arg) || Amount <= 0)
+	{
+		client_print_color(ID, ID, "^3[%s] ^4Gecersiz Miktar", TAG, Amount);
+		client_cmd(ID, "messagemode TL_MIKTARI");
+		return PLUGIN_HANDLED;
+	}
+	
+	new Name_ID[33], Name_New_ID[33], New_ID;
+	New_ID = MG_Num[ID][1];
+	get_user_name(ID, Name_ID, 32);
+	get_user_name(New_ID, Name_New_ID, 32);
+	
+	switch(MG_Num[ID][0])
+	{
+		case 1 :
+		{
+			if(New_ID != 0)
+			{
+				if(Amount > 100)
+				{
+					client_cmd(ID, "messagemode TL_MIKTARI");
+					client_print_color(ID, ID, "^3[%s] ^4En Fazla^3 100.00 TL ^4Verebilirsin", TAG);
+				}
+				else
+				{
+					MG_Num[ID][0] = 0;
+					MG_Num[ID][1] = 0;
+					TL_ID[New_ID] += Amount;
+					client_print_color(ID, ID, "^3[%s] ^4Gardiyan ^3%s %s ^4Adli Mahkuma ^3%d.00 TL ^4Verdi", TAG, Name_ID, Name_New_ID, Amount);
+				}
+			}
+		}
+		case 2 :
+		{
+			if(New_ID != 0)
+			{
+				MG_Num[ID][0] = 0;
+				MG_Num[ID][1] = 0;
+				
+				if(Amount > TL_ID[New_ID])
+				{
+					TL_ID[New_ID] = 0.00;
+					client_print_color(ID, ID, "^3[%s] ^4Gardiyan ^3%s %s ^4Adli Mahkumun ^3Tum Parasini ^4Aldi", TAG, Name_ID, Name_New_ID);
+				}
+				else
+				{
+					TL_ID[New_ID] -= Amount;
+					client_print_color(ID, ID, "^3[%s] ^4Gardiyan ^3%s %s ^4Adli Mahkumdan ^3%d.00 TL ^4Aldi", TAG, Name_ID, Name_New_ID, Amount);
+				}
+			}
+		}
+		case 3 :
+		{
+			if(Amount > 100)
+			{
+				client_cmd(ID, "messagemode TL_MIKTARI");
+				client_print_color(ID, ID, "^3[%s] ^4En Fazla^3 100.00 TL ^4Verebilirsin", TAG);
+			}
+			else
+			{
+				MG_Num[ID][0] = 0;
+				MG_Num[ID][1] = 0;
+				
+				new Players[32], Num_T;
+				get_players(Players, Num_T, "cehi", "TERRORIST");
+				
+				for(new i; i < Num_T; i++)
+				{
+					New_ID = Players[i];
+					TL_ID[New_ID] += Amount;
+				}
+				
+				client_print_color(ID, ID, "^3[%s] ^4Gardiyan ^3%s ^4Butun Mahkumlara ^3%d.00 TL ^4Verdi", TAG, Name_ID, Amount);
+			}
+		}
+		case 4 :
+		{
+			if(Amount > 100)
+			{
+				client_cmd(ID, "messagemode TL_MIKTARI");
+				client_print_color(ID, ID, "^3[%s] ^4En Fazla^3 100.00 TL ^4Verebilirsin", TAG);
+			}
+			else
+			{
+				MG_Num[ID][0] = 0;
+				MG_Num[ID][1] = 0;
+				
+				new Players[32], Num_T;
+				get_players(Players, Num_T, "acehi", "TERRORIST");
+				
+				for(new i; i < Num_T; i++)
+				{
+					New_ID = Players[i];
+					TL_ID[New_ID] += Amount;
+				}
+				
+				client_print_color(ID, ID, "^3[%s] ^4Gardiyan ^3%s ^4Yasayan Mahkumlara ^3%d.00 TL ^4Verdi", TAG, Name_ID, Amount);
+			}
+		}
+	}
+	
+	return PLUGIN_HANDLED;
+}
+
+public Riot_Control(ID)
+{
+	if(get_user_flags(ID) & AUTHORITY_1)
+	{
+		new Arg[2], Name[33];
+		read_argv(1, Arg, 1);
+		get_user_name(ID, Name, 32);
+		
+		if(equal(Arg, "1"))
+		{
+			Control[3] = true;
+			client_print_color(0, 0, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Ayaklanma Baslatti", TAG, Name);
+		}
+		else
+		{
+			Control[3] = false;
+			client_print_color(0, 0, "^3[%s] ^4Ayaklanma Baskani ^3%s ^4Ayaklanmayi Durdurdu", TAG, Name);
+		}
+	}
+}
+
+public Event_CurWeapon(ID)
+{
+	new Weapon = read_data(2);
+	
+	if(get_user_weapon(ID) == CSW_KNIFE)
+	{
+		switch(get_member(ID, m_iTeam))
+		{
+			case TEAM_TERRORIST :
+			{
+				switch(Knife_ID[ID])
+				{
+					case 0 :
+					{
+						set_entvar(ID, var_viewmodel, VIEW_MODEL_T);
+						set_entvar(ID, var_weaponmodel, WEAPON_MODEL_T);
+					}
+					case 1 :
+					{
+						set_entvar(ID, var_viewmodel, VIEW_MODEL_T_1);
+						set_entvar(ID, var_weaponmodel, WEAPON_MODEL_T_1);
+					}
+					case 2 :
+					{
+						set_entvar(ID, var_viewmodel, VIEW_MODEL_T_2);
+						set_entvar(ID, var_weaponmodel, WEAPON_MODEL_T_2);
+					}
+					case 3 :
+					{
+						set_entvar(ID, var_viewmodel, VIEW_MODEL_T_3);
+						set_entvar(ID, var_weaponmodel, WEAPON_MODEL_T_3);
+					}
+					case 4 :
+					{
+						set_entvar(ID, var_viewmodel, VIEW_MODEL_T_4);
+						set_entvar(ID, var_weaponmodel, WEAPON_MODEL_T_4);
+					}
+				}
+			}
+			case TEAM_CT :
+			{
+				set_entvar(ID, var_viewmodel, VIEW_MODEL_CT);
+				set_entvar(ID, var_weaponmodel, WEAPON_MODEL_CT);
+			}
+		}
+	}
+	
+	if(Control_ID[ID][5])
+	{
+		if(Max_Clip_Ammo[Weapon] < 0)
+		{
+			return PLUGIN_CONTINUE;
+		}
+		
+		set_member(get_member(ID, m_pActiveItem), m_Weapon_iClip, Max_Clip_Ammo[Weapon]);
+	}
+	
+	return PLUGIN_CONTINUE;
+}
+
+public Event_Round_Start()
+{
+	Control[0] = true;
+	Control[1] = false;
+	Control[2] = false;
+	set_lights("#OFF");
+	set_task(5.0, "Round_Start_False");
+}
+
+public Round_Start_False()
+{
+	Control[0] = false;
+}
+
+public EmitSound(ID, Channel, const Sample[], Float: Volume, Float: Attn, Flags, Pitch)
+{
+	if(!is_user_connected(ID) || !equal(Sample[8], "kni", 3))
+	{
+		return FMRES_IGNORED;
+	}
+	
+	switch(get_member(ID, m_iTeam))
+	{
+		case TEAM_TERRORIST :
+		{
+			if(Knife_ID[ID] != 4)
+			{
+				if(equal(Sample[14], "sla", 3))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[5], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+				else if(equal(Sample,"weapons/knife_deploy1.wav"))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[6], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+				else if(equal(Sample[14], "hit", 3))
+				{
+					if(Sample[17] == 'w')
+					{
+						engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[7], Volume, Attn, Flags, Pitch);
+						return FMRES_SUPERCEDE;
+					}
+					else
+					{
+						switch(random_num(1, 4))
+						{
+							case 1 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[0], Volume, Attn, Flags, Pitch);
+							}
+							case 2 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[1], Volume, Attn, Flags, Pitch);
+							}
+							case 3 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[2], Volume, Attn, Flags, Pitch);
+							}
+							case 4 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[3], Volume, Attn, Flags, Pitch);
+							}
+						}
+						
+						return FMRES_SUPERCEDE;
+					}
+				}
+				else if(equal(Sample[14], "sta", 3))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_1[4], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+			}
+			else
+			{
+				if(equal(Sample[14], "sla", 3))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[3], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+				else if(equal(Sample,"weapons/knife_deploy1.wav"))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[4], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+				else if(equal(Sample[14], "hit", 3))
+				{
+					if(Sample[17] == 'w')
+					{
+						engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[5], Volume, Attn, Flags, Pitch);
+						return FMRES_SUPERCEDE;
+					}
+					else
+					{
+						switch(random_num(1, 2))
+						{
+							case 1 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[0], Volume, Attn, Flags, Pitch);
+							}
+							case 2 :
+							{
+								engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[1], Volume, Attn, Flags, Pitch);
+							}
+						}
+						
+						return FMRES_SUPERCEDE;
+					}
+				}
+				else if(equal(Sample[14], "sta", 3))
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, T_WEAPON_Sounds_2[2], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+			}
+		}
+		case TEAM_CT :
+		{
+			if(equal(Sample[14], "sla", 3))
+			{
+				engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[5], Volume, Attn, Flags, Pitch);
+				return FMRES_SUPERCEDE;
+			}
+			else if(equal(Sample,"weapons/knife_deploy1.wav"))
+			{
+				engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[6], Volume, Attn, Flags, Pitch);
+				return FMRES_SUPERCEDE;
+			}
+			else if(equal(Sample[14], "hit", 3))
+			{
+				if(Sample[17] == 'w')
+				{
+					engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[7], Volume, Attn, Flags, Pitch);
+					return FMRES_SUPERCEDE;
+				}
+				else
+				{
+					switch(random_num(1, 4))
+					{
+						case 1 :
+						{
+							engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[0], Volume, Attn, Flags, Pitch);
+						}
+						case 2 :
+						{
+							engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[1], Volume, Attn, Flags, Pitch);
+						}
+						case 3 :
+						{
+							engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[2], Volume, Attn, Flags, Pitch);
+						}
+						case 4 :
+						{
+							engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[3], Volume, Attn, Flags, Pitch);
+						}
+					}
+					
+					return FMRES_SUPERCEDE;
+				}
+			}
+			else if(equal(Sample[14], "sta", 3))
+			{
+				engfunc(EngFunc_EmitSound, ID, Channel, CT_WEAPON_Sounds[4], Volume, Attn, Flags, Pitch);
+				return FMRES_SUPERCEDE;
+			}
+		}
+	}
+	
+	return FMRES_IGNORED;
+}
+
+public AddToFullPack(ES_Handle, E, Ent, Host, H_Flags, Player, P_Set)
+{
+	if(Player & get_cvar_num("semiclip") == 1)
+	{
+		if(is_user_alive(Host) && Control_ID[Host][18] && Ent != Host && is_user_alive(Ent) && get_member(Ent, m_iTeam) == get_member(Host, m_iTeam))
+		{
+			set_es(ES_Handle, ES_Origin, {999999999.0, 999999999.0, 999999999.0});
+		}
+	}
+}
+
+public RoundEnd()
+{
+	set_lights("d");
+}
+
+public CBasePlayer_Spawn(ID)
+{
+	rg_reset_user_model(ID);
+	
+	Knife_ID[ID] = 0;
+	Control_ID[ID][0] = false;
+	Control_ID[ID][5] = false;
+	
+	if(Control[0])
+	{
+		Prime_Number_ID[ID] = 0;
+		
+		Control_ID[ID][1] = false;
+		Control_ID[ID][3] = false;
+		Control_ID[ID][4] = false;
+		Control_ID[ID][9] = false;
+		Control_ID[ID][10] = false;
+		
+		Job_ID[ID][0] = Job_ID[ID][1];
+		
+		switch(Job_ID[ID][0])
+		{
+			case 1 :
+			{
+				set_task(60.0, "Give_TL", ID + TASK_TL_MONSTER, _, _, "b");
+			}
+			case 4 :
+			{
+				switch(random_num(1, 2))
+				{
+					case 1 :
+					{
+						rg_give_item(ID, "weapon_hegrenade");
+						client_print_color(ID, ID, "^3[%s] ^4Bombaci Mulayim Olarak ^3El Bombasi ^4Kazandin", TAG);
+					}
+					case 2 :
+					{
+						rg_give_item(ID, "weapon_smokegrenade");
+						client_print_color(ID, ID, "^3[%s] ^4Bombaci Mulayim Olarak ^3Sis Bombasi ^4Kazandin", TAG);
+					}
+				}
+			}
+		}
+	}
+	
+	if(get_member(ID, m_iTeam) == TEAM_TERRORIST)
+	{
+		rg_remove_all_items(ID);
+		rg_give_item(ID, "weapon_knife");
+		
+		if(Job_ID[ID][0] == 3)
+		{
+			set_entvar(ID, var_health, 150.0);
+		}
+		else
+		{
+			set_entvar(ID, var_health, 100.0);
+		}
+		
+		new Players[32], Num_Alive_T;
+		get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+		
+		if(Num_Alive_T > 1)
+		{
+			Deposit_Menu(ID);
+		}
+		
+		Hud_Message(ID);
+	}
+}
+
+public Give_TL(TASK_ID)
+{
+	new ID = TASK_ID - TASK_TL_MONSTER;
+	TL_ID[ID] += 1.25;
+}
+	
+public Hud_Message(ID)
+{
+	if(get_member(ID, m_iTeam) == TEAM_TERRORIST && is_user_alive(ID))
+	{
+		set_task(1.0, "Hud_Message", ID);
+		
+		new Time = get_user_time(ID, 1) / 60;
+		
+		set_hudmessage(124, 252, 0, 5.0, 0.75, 0, 1.0, 1.0);
+		
+		show_hudmessage(ID, "Cebinizdeki TL : %0.2f |^nOynadigin Dakika : %d |^nGodMode : %s|", TL_ID[ID], Time, CT_GodMode_Control() ? "ACIK" : "KAPALI");
+	}
+}
+
+public CBasePlayer_Killed(Victim, Killer)
+{
+	show_menu(Victim, 0, "");
+	
+	new Players[32], Num_Alive_T, New_ID;
+	get_players(Players, Num_Alive_T, "acehi", "TERRORIST");
+	
+	if(Num_Alive_T <= 1)
+	{
+		for(new i; i < Num_Alive_T; i++)
+		{
+			New_ID = Players[i];
+			
+			if(Control_ID[New_ID][5])
+			{
+				Control_ID[New_ID][5] = false;
+			}
+		}
+	}
+	
+	if(task_exists(Victim + TASK_TL_MONSTER))
+	{
+		remove_task(Victim + TASK_TL_MONSTER);
+	}
+	
+	if(Job_ID[Victim][0] == 2 && get_member(Victim, m_iTeam) == TEAM_TERRORIST)
+	{
+		switch(random_num(1, 4))
+		{
+			case 1 :
+			{
+				new Name[33];
+				get_user_name(Victim, Name, 32);
+				
+				rg_round_respawn(Victim);
+				client_print_color(Victim, Victim, "^3[%s] ^4Sansli Adam Meslegi Sayesinde Revlendin", TAG);
+				client_print_color(Victim, Victim, "^3[%s] ^4Mahkum ^3%s ^4Sansli Adam Meslegi Sayesinde Revlendi", TAG, Name);
+			}
+			case 2..4 :
+			{
+				client_print_color(Victim, Victim, "^3[%s] ^4Sansli Adam Meslegi Sayesinde ^3Revlenemedin ^1:(", TAG);
+			}
+		}
+	}
+	
+	if(get_member(Killer, m_iTeam) == TEAM_TERRORIST && get_member(Victim, m_iTeam) == TEAM_CT)
+	{
+		switch(get_member(Victim, m_iTeam))
+		{
+			case TEAM_TERRORIST :
+			{
+				Quest_ID[Killer][2]++;
+			}
+			case TEAM_CT :
+			{
+				Quest_ID[Killer][1]++;
+		
+				if(Job_ID[Killer][0] == 5)
+				{
+					TL_ID[Killer] += 1.5;
+					set_entvar(Killer, var_health, Float: get_entvar(Killer, var_health) + 10.0);
+				}
+			}
+		}
+	}
+}
+
+public CBasePlayer_TakeDamage(Victim, Inflictor, Attacker, Float: Damage, Damage_Bits)
+{
+	if(is_user_connected(Attacker) && is_user_connected(Victim) && Victim != Attacker)
+	{
+		if(get_user_weapon(Attacker) == CSW_KNIFE)
+		{
+			switch(get_member(Attacker, m_iTeam))
+			{
+				case TEAM_TERRORIST :
+				{
+					if(Knife_ID[Attacker] != 4)
+					{
+						if(get_member(Victim, m_LastHitGroup) == HIT_HEAD)
+						{
+							SetHookChainArg(4, ATYPE_FLOAT, 25.00);
+						}
+						else
+						{
+							SetHookChainArg(4, ATYPE_FLOAT, 10.00);
+						}
+					}
+					else
+					{
+						SetHookChainArg(4, ATYPE_FLOAT, 100.00);
+					}
+				}
+				case TEAM_CT :
+				{
+					if(get_member(Victim, m_LastHitGroup) == HIT_HEAD)
+					{
+						SetHookChainArg(4, ATYPE_FLOAT, 100.00);
+					}
+					else
+					{
+						SetHookChainArg(4, ATYPE_FLOAT, 50.00);
+					}
+				}
+			}
+		}
+	}
+}
+
+bool: CT_GodMode_Control()
+{
+	new Players[32], Num_Alive_CT, New_ID;
+	get_players(Players, Num_Alive_CT, "acehi", "CT");
+	
+	for(new i; i < Num_Alive_CT; i++)
+	{
+		New_ID = Players[i];
+		
+		if(!get_entvar(New_ID, var_takedamage))
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
